@@ -331,13 +331,28 @@
 <div class="tabpane" data-p="build">
   <fieldset>
     <legend>클래스 &amp; 스킬</legend>
-    <div class="grid c2">
+    <div class="grid c3">
       <label><span class="k">슈퍼 클래스</span><select id="cls"></select></label>
+      <label><span class="k">서브 클래스 <span class="en">5레벨</span></span><select id="sub"></select></label>
       <label><span class="k">스킬</span><select id="skill"></select></label>
     </div>
-    <p class="hint" id="skillInfo">베이스 클래스는 상위 슈퍼 클래스의 스킬을 그대로 따릅니다.</p>
+    <p class="hint" id="skillInfo">베이스 클래스는 상위 슈퍼 클래스의 스킬을 그대로 따릅니다. 서브 클래스 스킬은 목록에 <b>[서브]</b>로 붙습니다.</p>
     <div id="clsPassives"></div>
   </fieldset>
+  <fieldset>
+    <legend>무기 · 갑옷</legend>
+    <div class="grid c3">
+      <label><span class="k">무기</span><select id="weap"></select></label>
+      <label id="weapStkWrap" hidden><span class="k"><span id="weapStkLbl">스택</span></span>
+        <input type="number" id="weapStk" value="0" min="0" step="1"></label>
+      <label><span class="k">갑옷</span><select id="armor"></select></label>
+    </div>
+    <div class="mrow" style="grid-template-columns:1fr auto"><span class="nm" id="weapOut">—</span></div>
+    <div class="mrow" style="grid-template-columns:1fr auto"><span class="nm" id="armorOut">—</span></div>
+    <p class="hint">무기는 계열 효과만 반영합니다 (같은 계열이면 검·창·지팡이 상관없이 같은 효과).
+      갑옷의 <b>스탯 +N / +N%</b>는 「내 스탯」 위에 얹혀 계수와 치명타에 바로 들어가고, 체력·속성별 디펜스는 표시만 합니다.</p>
+  </fieldset>
+
   <fieldset>
     <legend>스킬 수치</legend>
     <div class="grid c3">
@@ -787,6 +802,95 @@ const CLASSES = {
 ]}
 };
 
+/* ══════════ 2-b. 서브 클래스 (5레벨) ══════════ */
+const SUBCLASSES = {
+"— 없음 —":{p:[], k:[]},
+"비스트마스터":{p:[
+  {n:"[서브] 약점 노출", note:"대상 약점(속성 상성) 2배 · 2NRG · CD6", f:{affMul:2}},
+  {n:"[서브] 은신 (툴)", note:"전투 회피용 · 계산 대상 아님", f:{}}
+],k:[
+  {n:"[서브] 마크", b:7, h:1, c:1, cd:2, e:"물리", s:[["STR",0]], x:"막기·회피 불가 · 계수 분모 미표기"},
+  {n:"[서브] 약점 노출 (버프)", b:0, h:1, c:2, cd:6, e:"물리", s:[]}
+]},
+"음유시인":{p:[
+  {n:"[서브] 라티르 마이너", note:"아군 전체 피해량 +5% · 리젠 0.5%", f:{multi:5}},
+  {n:"[서브] 쿠라르 포르테 (툴)", note:"자힐 교환 · 계산 대상 아님", f:{}}
+],k:[
+  {n:"[서브] 라티르 마이너 (버프)", b:0, h:1, c:2, cd:10, e:"마법", s:[]},
+  {n:"[서브] 레바나르 마조르 (디버프)", b:0, h:1, c:2, cd:10, e:"마법", s:[], x:"적 전체 취약 4턴 + 실명 3턴"}
+]},
+"연금술사":{p:[
+  {n:"[서브] 아이언 가츠", note:"전투 중 포션 추가 · 계산 대상 아님", f:{}}
+],k:[
+  {n:"[서브] 혼합물 투척", b:5, h:1, c:2, cd:6, e:"독", s:[["STR",0],["ARC",0]],
+   x:"막기·회피 불가 · 무작위 디버프 3턴 · 계수 분모 미표기"}
+]},
+"광부":{p:[
+  {n:"[서브] More For Less", note:"채굴 보너스 · 계산 대상 아님", f:{}}
+],k:[
+  {n:"[서브] The Right Angle", b:12, h:1, c:3, cd:6, e:"물리", s:[["STR",70],["END",140]], x:"적 전체 구속 4턴"}
+]},
+"대장장이":{p:[
+  {n:"[서브] Essence of Smithing", note:"갑옷 제작비 100골드 · 계산 대상 아님", f:{}}
+],k:[
+  {n:"[서브] Jury Rigging (쉴드)", b:0, h:1, c:1, cd:10, e:"물리", s:[["END",155]], x:"피해 없음 — 쉴드 제공"}
+]}
+};
+const subOf = () => SUBCLASSES[$("sub").value] || SUBCLASSES["— 없음 —"];
+
+/* ══════════ 2-c. 무기 계열 ══════════ */
+const WEAPONS = {
+"— 없음 —":            {f:{}, note:""},
+"페러스 (기본)":        {f:{}, note:"계열 효과 없음 · 샤드 슬롯 6"},
+"블랙스틸":            {f:{multi:10}, note:"피해량 +10% · 샤드 4"},
+"코어알로이":          {f:{multi:5}, max:6, unit:"남은 에너지", note:"남은 에너지 1당 +5%, 최대 30%"},
+"제이드":              {f:{}, note:"인커밍·아웃고잉 힐링 +30% · 샤드 5"},
+"대검 (Great Sword)":   {f:{multi:10}, note:"피해량 +10% · 스트라이크 추가 +20% · 샤드 6"},
+"바스틱 글래이브":      {f:{}, note:"12.5% 확률로 최고 스탯 능력 발동 (바스티얀 16.6%)"},
+"슬라임 (킹 슬라임)":   {f:{}, note:"방패 기준 받는 피해 −20% · 방어 시 약화·실명"},
+"용골 (야툴)":          {f:{multi:15}, note:"화염·영혼 불꽃 걸린 적에게 +15% · 샤드 3"},
+"역병 (토리안)":        {f:{multi:20}, note:"약화 또는 취약 걸린 적에게 +20% · 둘 다면 저주"},
+"흑혈통 (메트롬 베셀)": {f:{multi:10}, note:"피해량 +10% · 받은 디버프 되돌려줌 · 샤드 2"},
+"태양 (세라폰)":        {f:{}, note:"적중 시 20% 확률로 적 방어력 감소 · 샤드 3"},
+"태초 (핸다콘다)":      {f:{multi:20}, note:"피해량 +20% · 방패는 대신 받는 피해 −15% · 샤드 4"},
+"사암 (핸다콘다)":      {f:{}, note:"20% 확률 분열 부여 · 방패는 받는 피해 −30% · 샤드 3"},
+"아이스린드":          {f:{multi:20}, note:"추위 걸린 적에게 +20% · 10% 확률 추위 부여"},
+"아이보리":            {f:{crit:15}, note:"치명타 확률 +15% (방패는 +5%)"},
+"곡괭이":              {f:{}, note:"광물 적 최대 체력 50% 삭제 · 그 외엔 피해 불가"}
+};
+
+/* ══════════ 2-d. 갑옷 ══════════
+   hp/hpPct: 최대 체력 | flat/pct: 스탯 | def: 표시용                            */
+const ARMORS = {
+"— 없음 —":                    {hp:0},
+"여행자 스님 (몽크)":           {hp:16, hpPct:7.5, flat:{STR:5}, pct:{STR:5}, def:"물리5 화염5 신성5 · 리젠 +1"},
+"방랑하는 수련가 (브롤러)":      {hp:18, hpPct:7.5, pct:{STR:10}, def:"물리5 화염10 · 턴당 에너지 +16.6%"},
+"그늘을 걷는 자 (다크레이서)":   {hp:18, hpPct:7.5, pct:{ARC:5}, def:"물리5 헥스10 어둠20"},
+"성기사의 흉갑 (팔라딘)":        {hp:20, hpPct:17.5, def:"물리10 마법5 화염5 신성5"},
+"숙련된 전사 (블레이드 댄서)":   {hp:15, hpPct:10, pct:{STR:5}, def:"물리5 어둠10 · 턴당 에너지 +16.6%"},
+"격노의 전사 (버서커)":         {hp:16, hpPct:10, def:"물리5 화염5 헥스10 · 인커밍 힐 +10%"},
+"탐험 순교자 (세인트)":         {hp:20, hpPct:7.5, flat:{ARC:3, SPD:1}, def:"물리5 신성15 · 리젠 +1"},
+"기갑창기병 (랜서)":            {hp:20, hpPct:15, def:"물리10 마법10 화염5 · 턴당 에너지 +12.5%"},
+"피의 위협 (임패일러)":         {hp:22, hpPct:10, def:"물리10 독5 헥스5 · 인커밍 힐 +20%"},
+"생명의 궁수 (레인저)":         {hp:15, hpPct:5, flat:{ARC:3}, pct:{ARC:5}, def:"마법10 자연10 독10 · 리젠 +1"},
+"도적 사냥꾼 (로그)":           {hp:15, hpPct:7.5, pct:{SPD:10}, def:"물리5 화염5 · 리젠 +1"},
+"어둠의 망토 (어쌔신)":         {hp:13, hpPct:7.5, def:"물리5 어둠5 · 리젠 +1 · 턴당 에너지 +12.5%"},
+"추앙받는 군단병 (라이온하트)":  {hp:17, hpPct:12.5, def:"물리15 마법5 화염15 얼음10 자연10 어둠5"},
+"강화된 예언자 (시타델)":        {hp:35, hpPct:5, def:"물리10 마법10 화염10 얼음10 신성10 어둠15 헥스15"},
+"죽음의 망토 (아비터)":         {hp:25, hpPct:2.5, pct:{ARC:10}, def:"물리5 마법10 얼음10 신성15 어둠20"},
+"마법의 옷 (엘리멘탈리스트)":    {hp:15, flat:{ARC:4}, pct:{ARC:7.5}, def:"마법10 화염10 독10 신성10"},
+"마법사 견습생 (헥서)":         {hp:15, flat:{ARC:3}, pct:{ARC:5}, def:"마법15 화염10 독10 · 리젠 +1"},
+"부패의 마법사 (네크로맨서)":    {hp:16, hpPct:5, flat:{ARC:2}, pct:{ARC:5}, def:"마법15 화염10 신성10 · 턴당 에너지 +10%"},
+"탐험가":                      {hp:12, def:"물리10"},
+"그림자 망토":                  {hp:10, flat:{SPD:1, LCK:2}, def:"물리5"},
+"방황하는 악당":                {hp:15, def:"물리5"},
+"사슬 갑옷":                    {hp:15, hpPct:10, def:"물리10 · 마법 −15"},
+"귀족":                        {hp:10, def:"물리10 마법5"},
+"트래퍼":                      {hp:18, flat:{STR:2}, def:"물리10"},
+"나그네":                      {hp:15, def:"물리15"},
+"여행가":                      {hp:0, def:"능력 없음 (코디용)"}
+};
+
 const ELEM_DEFAULT = 1;
 
 /* ══════════ 3. 렌더 ══════════ */
@@ -854,8 +958,8 @@ function renderClassPassives(){
   const host = $("clsPassives");
   host.innerHTML = "";
   clsRows = [];
-  const c = CLASSES[$("cls").value];
-  if (!c || !c.p.length) return;
+  const c = {p: (CLASSES[$("cls").value] || {p:[]}).p.concat(subOf().p)};
+  if (!c.p.length) return;
   const box = document.createElement("div");
   box.className = "mgroup";
   box.style.marginTop = "12px";
@@ -900,7 +1004,7 @@ $("addScale").addEventListener("click", () => { addScaler("ARC", 80); calc(); })
 
 /* ══════════ 4. 보정 집계 ══════════ */
 const FSUF = {multi:"%", critDmg:"%", reduc:"", flat:"", trueFlat:"", crit:""};
-const EMPTY = () => ({multi:0, flat:0, reduc:0, reducMul:1, trueFlat:0, crit:0, critDmg:0, affSet:null, finalMul:1});
+const EMPTY = () => ({multi:0, flat:0, reduc:0, reducMul:1, trueFlat:0, crit:0, critDmg:0, affSet:null, affMul:1, finalMul:1});
 
 function readRow(r, ctx){
   const it = r.item;
@@ -926,6 +1030,7 @@ function readRow(r, ctx){
       k === "reducMul" ? "×" + Math.pow(v,n).toFixed(3)
     : k === "finalMul" ? "×" + v
     : k === "affSet"   ? "→" + v
+    : k === "affMul"   ? "속성 ×" + v
     : (v*n > 0 ? "+" : "") + +(v*n).toFixed(2) + FSUF[k]).join(" ");
   return {on, f, n, eff, optIdx};
 }
@@ -945,6 +1050,7 @@ function collectMods(ctx){
       if (k === "reducMul") acc.reducMul *= Math.pow(v,n);
       else if (k === "finalMul") acc.finalMul *= v;
       else if (k === "affSet") acc.affSet = v;
+      else if (k === "affMul") acc.affMul *= v;
       else acc[k] += v*n;
     }
     if (eff) lines.push([r.item.n + (n > 1 ? " ×" + n : ""), eff]);
@@ -1128,14 +1234,48 @@ function masteryState(){
   return {bonus, used};
 }
 // 스탯 최종값 = 입력값 + 마스터리 보너스
-let CACHE = {soul:null, party:null, mb:{STR:0,ARC:0,END:0,SPD:0,LCK:0}};
+$("weap").innerHTML = Object.keys(WEAPONS).map(n => '<option value="'+n+'">'+n+'</option>').join("");
+$("armor").innerHTML = Object.keys(ARMORS).map(n => '<option value="'+n+'">'+n+'</option>').join("");
+$("weap").value = "페러스 (기본)";
+
+function weaponState(){
+  const w = WEAPONS[$("weap").value] || WEAPONS["— 없음 —"];
+  const wrap = $("weapStkWrap");
+  wrap.hidden = !w.max;
+  if (w.max){ $("weapStkLbl").textContent = w.unit; $("weapStk").max = w.max; }
+  const n = w.max ? Math.min(w.max, Math.max(0, Math.round(num("weapStk")))) : 1;
+  const acc = EMPTY();
+  for (const [k,v] of Object.entries(w.f)) acc[k] += v * n;
+  const eff = Object.entries(w.f).map(([k,v]) => "+" + (v*n) + (k === "crit" ? " 치명타" : "%")).join(" ");
+  $("weapOut").innerHTML = (w.note || "계열 효과 없음") +
+    (eff ? ' <span class="en" style="color:var(--gold)">→ ' + eff + '</span>' : "");
+  return {acc, name:$("weap").value};
+}
+function armorState(){
+  const a = ARMORS[$("armor").value] || ARMORS["— 없음 —"];
+  const flat = {STR:0,ARC:0,END:0,SPD:0,LCK:0}, pct = {STR:0,ARC:0,END:0,SPD:0,LCK:0};
+  for (const [k,v] of Object.entries(a.flat || {})) flat[k] += v;
+  for (const [k,v] of Object.entries(a.pct || {})) pct[k] += v;
+  const bits = [];
+  if (a.hp) bits.push("최대 체력 +" + a.hp);
+  if (a.hpPct) bits.push("+" + a.hpPct + "%");
+  Object.entries(flat).forEach(([k,v]) => { if (v) bits.push(STATS[k] + " +" + v); });
+  Object.entries(pct).forEach(([k,v]) => { if (v) bits.push(STATS[k] + " +" + v + "%"); });
+  $("armorOut").innerHTML = (bits.join(" · ") || "능력 없음") +
+    (a.def ? ' <span class="en">| ' + a.def + '</span>' : "");
+  return {flat, pct, hp:a.hp || 0, hpPct:a.hpPct || 0, name:$("armor").value};
+}
+
+let CACHE = {soul:null, party:null, weapon:null, ar:{flat:{STR:0,ARC:0,END:0,SPD:0,LCK:0}, pct:{STR:0,ARC:0,END:0,SPD:0,LCK:0}}, mb:{STR:0,ARC:0,END:0,SPD:0,LCK:0}};
 function refreshCache(){
   CACHE.mb = masteryState().bonus;
   CACHE.soul = soulState().acc;
   CACHE.party = partyAcc().acc;
+  CACHE.weapon = weaponState().acc;
+  CACHE.ar = armorState();
 }
 function MB(){ return CACHE.mb; }
-function SV(k){ return num(k) + CACHE.mb[k]; }
+function SV(k){ return (num(k) + CACHE.mb[k] + CACHE.ar.flat[k]) * (1 + CACHE.ar.pct[k] / 100); }
 
 /* ══════════ 4-b. 파티 ══════════ */
 const PARTY_BUFFS = [
@@ -1171,6 +1311,7 @@ function partyAcc(){
     for (const [k,v] of Object.entries(b[1])){
       if (k === "finalMul") acc.finalMul *= v;
       else if (k === "affSet") acc.affSet = v;
+      else if (k === "affMul") acc.affMul *= v;
       else acc[k] += v;
     }
     if (Object.keys(b[1]).length) lines.push([b[0], ""]);
@@ -1180,7 +1321,7 @@ function partyAcc(){
 function mergeAcc(a, b){
   const o = EMPTY();
   for (const k of Object.keys(o)){
-    if (k === "reducMul" || k === "finalMul") o[k] = a[k] * b[k];
+    if (k === "reducMul" || k === "finalMul" || k === "affMul") o[k] = a[k] * b[k];
     else if (k === "affSet") o[k] = b.affSet !== null ? b.affSet : a.affSet;
     else o[k] = a[k] + b[k];
   }
@@ -1226,7 +1367,7 @@ function resolve(M, over){
   const sc = over && over.scale !== undefined ? over.scale : scaleMul().mul;
   const scaled = base * sc;
   const multi = 1 + (num("multi") + M.multi) / 100;
-  const aff = M.affSet !== null ? M.affSet : num("aff");
+  const aff = (M.affSet !== null ? M.affSet : num("aff")) * M.affMul;
   const beforeDR = (scaled + num("flat") + M.flat - num("dflat")) * multi * aff * M.finalMul;
   const R = (num("reduc") + M.reduc) * M.reducMul;
   const drMult = R >= 0 ? 100/(100+R) : Math.min(2, 2 - 100/(100+Math.abs(R)));
@@ -1238,10 +1379,10 @@ function resolve(M, over){
 /* ══════════ 6. 시뮬레이션 ══════════ */
 const simRows = $("simrows");
 function actionOptions(){
-  const c = CLASSES[$("cls").value] || {k:[]};
   const uni = CLASSES["공용"].k;
+  const own = $("cls").value === "공용" ? [] : (CLASSES[$("cls").value] || {k:[]}).k;
   const list = [["명상","명상 (에너지 +2)"],["방어","방어"],["대기","대기"]];
-  uni.concat($("cls").value === "공용" ? [] : c.k).forEach(s => list.push(["s:"+s.n, s.n + "  ("+s.c+"NRG · CD"+s.cd+")"]));
+  uni.concat(own, subOf().k).forEach(s => list.push(["s:"+s.n, s.n + "  ("+s.c+"NRG · CD"+s.cd+")"]));
   return list;
 }
 function addTurn(pick){
@@ -1266,7 +1407,9 @@ function refreshActions(){
 }
 
 function skillByName(n){
-  for (const c of Object.values(CLASSES)){ const f = c.k.find(s => s.n === n); if (f) return f; }
+  for (const c of Object.values(CLASSES).concat(Object.values(SUBCLASSES))){
+    const f = c.k.find(s => s.n === n); if (f) return f;
+  }
   return null;
 }
 
@@ -1274,6 +1417,7 @@ function runSim(){
   const rows = [...simRows.querySelectorAll(".simrow")];
   if (!rows.length){ $("simTotal").textContent = "—"; return null; }
   const perTurn = num("nrgPerTurn");
+  const WA = weaponState().acc;
   const P = partyAcc(), SOU = soulState(), dot = dotPerTurn() * (1 + SOU.dot/100), hp0 = num("tgtHP");
   let nrg = 1, combo = 0, total = 0, cds = {}, afterMeditate = false, last = null, hp = hp0, killTurn = 0;
 
@@ -1294,7 +1438,7 @@ function runSim(){
       else if (cds[sk.n] > 0){ bad = true; st = "⚠ 쿨타임 " + cds[sk.n] + "턴"; combo = 0; afterMeditate = false; }
       else {
         nrg -= sk.c; cds[sk.n] = sk.cd; combo++;
-        const M = mergeAcc(mergeAcc(collectMods({turn, combo, afterMeditate}), P.acc), soulState({turn, afterMeditate}).acc);
+        const M = mergeAcc(mergeAcc(mergeAcc(collectMods({turn, combo, afterMeditate}), P.acc), soulState({turn, afterMeditate}).acc), WA);
         const sc = sk.s.length ? 1 + sk.s.reduce((a,[st2,d]) => a + (d > 0 ? SV(st2)/d : 0), 0) : scaleMul().mul;
         const r = resolve(M, {base: sk.b, scale: sc});
         const k = critParts(M);
@@ -1331,7 +1475,7 @@ function calc(){
   refreshCache();
   const SO = soulState();
   const PA = partyAcc();
-  const M = mergeAcc(mergeAcc(collectMods(null), PA.acc), SO.acc);
+  const M = mergeAcc(mergeAcc(mergeAcc(collectMods(null), PA.acc), SO.acc), weaponState().acc);
   const extra = SO.lines.map(([a,b]) => ["소울 · " + a, b])
     .concat(PA.lines.map(([a]) => ["파티 · " + a, ""]));
   if (extra.length) $("bd").insertAdjacentHTML("beforeend",
@@ -1379,7 +1523,7 @@ function pressedIn(key){
 }
 function renderCard(M, r, k, hits, expPerHit){
   const cls = $("cls").value, si = $("skill").value;
-  const sk = si !== "" ? CLASSES[cls].k[+si] : null;
+  const sk = si !== "" ? skillPool()[+si] : null;
   $("cardTitle").textContent = (cls === "— 클래스 없음 —" ? "직접 입력 빌드" : cls) + (sk ? " · " + sk.n : "");
   const parts = scaleMul().parts;
   $("cardSub").textContent =
@@ -1428,6 +1572,9 @@ function renderCard(M, r, k, hits, expPerHit){
     chips.push("<b>" + x.item.n + "</b>" + (tier ? " " + tier.selectedOptions[0].textContent : "") +
       (stk && +stk.value > 1 ? " ×" + stk.value : ""));
   });
+  const wn = $("weap").value, an = $("armor").value;
+  if (wn !== "— 없음 —") chips.push("무기 · <b>" + wn + "</b>");
+  if (an !== "— 없음 —") chips.push("갑옷 · <b>" + an + "</b>");
   soulEl.querySelectorAll(".mrow").forEach(row => {
     const v = +row.querySelector(".rank").value;
     if (v) chips.push("소울 · <b>" + SOUL[row.dataset.b][1][row.dataset.i].n + "</b> " + v + "랭");
@@ -1510,7 +1657,7 @@ function statScale(stats){
   scalers.querySelectorAll(".scalerow").forEach(r => {
     const st = r.querySelector(".sStat").value;
     const d = parseFloat(r.querySelector(".sDiv").value) || 0;
-    if (d > 0) s += (stats[st] + MBC[st]) / d;
+    if (d > 0) s += ((stats[st] + MBC[st] + CACHE.ar.flat[st]) * (1 + CACHE.ar.pct[st] / 100)) / d;
   });
   return 1 + s;
 }
@@ -1520,6 +1667,7 @@ function accOf(list){
     for (const [k,v] of Object.entries(c.f)){
       if (k === "reducMul") a.reducMul *= Math.pow(v, c.n);
       else if (k === "finalMul") a.finalMul *= v;
+      else if (k === "affMul") a.affMul *= v;
       else if (k === "affSet") a.affSet = v;
       else a[k] += v * c.n;
     }
@@ -1527,17 +1675,17 @@ function accOf(list){
   return a;
 }
 function dmgWith(acc0, stats){
-  const acc = mergeAcc(acc0, mergeAcc(CACHE.soul || EMPTY(), CACHE.party || EMPTY()));
+  const acc = mergeAcc(mergeAcc(acc0, mergeAcc(CACHE.soul || EMPTY(), CACHE.party || EMPTY())), CACHE.weapon || EMPTY());
   const hits = Math.max(1, Math.round(num("hits")));
   const scaled = num("base") * statScale(stats);
   const multi = 1 + (num("multi") + acc.multi) / 100;
-  const aff = acc.affSet !== null ? acc.affSet : num("aff");
+  const aff = (acc.affSet !== null ? acc.affSet : num("aff")) * acc.affMul;
   const beforeDR = (scaled + num("flat") + acc.flat - num("dflat")) * multi * aff * acc.finalMul;
   const R = (num("reduc") + acc.reduc) * acc.reducMul;
   const dr = R >= 0 ? 100/(100+R) : Math.min(2, 2 - 100/(100+Math.abs(R)));
   const after = beforeDR * dr;
   const t = (num("trueFlat") + acc.trueFlat) * num("truedr") * (1 + num("trueMulti")/100);
-  const SL = stats.LCK + MB().LCK;
+  const SL = (stats.LCK + MB().LCK + CACHE.ar.flat.LCK) * (1 + CACHE.ar.pct.LCK / 100);
   const c = Math.max(0, SL * LCKM() + num("critAdd") + acc.crit) / 100;
   const n = Math.floor(c), f = c - n;
   const bonus = (SL >= 25 ? 1.10 : 1) + acc.critDmg / 100;
@@ -1572,7 +1720,7 @@ function candidates(){
       else push(it.f, "");
     });
   });
-  CLASSES[$("cls").value].p.forEach((it, ii) => {
+  (CLASSES[$("cls").value] || {p:[]}).p.concat(subOf().p).forEach((it, ii) => {
     if (!$("useCond").checked) return;
     if (!it.f || !Object.keys(it.f).length) return;
     out.push({kind:"cond", gid:"cp"+ii, label:"[클래스] " + it.n, f:it.f, n:it.max || 1, item:it, cls:ii});
@@ -1697,7 +1845,7 @@ function render(chosen, contrib, nextUp, stats, dmg, goal, baseline, trimmed, sl
 
   // 행동 로직
   const plan = [];
-  const skName = $("skill").value !== "" ? CLASSES[$("cls").value].k[+$("skill").value] : null;
+  const skName = $("skill").value !== "" ? skillPool()[+$("skill").value] : null;
   const has = re => chosen.some(c => re.test(c.label));
   if (has(/CP /)) plan.push("커럽션 폼에 진입해 커럽트 파워를 먼저 쌓는다 — 소모형 기어는 턴당 한 번만 발동한다.");
   if (has(/Fleet/)) plan.push("1턴차에 메인 스킬을 넣는다 (Fleet은 전투 첫 턴에만 붙는다).");
@@ -1779,16 +1927,18 @@ $("solve").addEventListener("click", solve);
 
 /* ── 클래스/스킬 선택 ── */
 $("cls").innerHTML = Object.keys(CLASSES).map(n => '<option value="'+n+'">'+n+'</option>').join("");
+function skillPool(){ return (CLASSES[$("cls").value] || {k:[]}).k.concat(subOf().k); }
 function fillSkills(){
-  const c = CLASSES[$("cls").value];
   $("skill").innerHTML = '<option value="">— 직접 입력 —</option>' +
-    c.k.map((s,i) => '<option value="'+i+'">'+s.n+'</option>').join("");
+    skillPool().map((s,i) => '<option value="'+i+'">'+s.n+'</option>').join("");
 }
+$("sub").innerHTML = Object.keys(SUBCLASSES).map(n => '<option value="'+n+'">'+n+'</option>').join("");
 $("cls").addEventListener("change", () => { fillSkills(); renderClassPassives(); refreshActions(); calc(); });
+$("sub").addEventListener("change", () => { fillSkills(); renderClassPassives(); refreshActions(); calc(); });
 $("skill").addEventListener("change", () => {
-  const c = CLASSES[$("cls").value], i = $("skill").value;
+  const i = $("skill").value;
   if (i === ""){ $("skillInfo").textContent = "베이스 클래스는 상위 슈퍼 클래스의 스킬을 그대로 따릅니다."; return; }
-  const s = c.k[+i];
+  const s = skillPool()[+i];
   $("base").value = s.b; $("hits").value = s.h;
   scalers.innerHTML = "";
   if (s.s.length) s.s.forEach(([st,d]) => addScaler(st, d)); else addScaler("STR", 0);
