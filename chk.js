@@ -429,6 +429,162 @@ function collectMods(ctx){
   return acc;
 }
 
+/* ══════════ 4-a. 소울 트리 ══════════
+   r: 최대 랭크 | c: 랭크별 누적 비용 | per: 랭크당 효과 | f(rank): 보정          */
+const SOUL = [
+["공격 트리", [
+  {n:"Denature", d:"도트 대미지 +2%/랭크", r:5, c:[25,50,75,100,150], dot:2},
+  {n:"Critical Point", d:"치명타 피해량 +5%/랭크", r:5, c:[50,100,150,200,250], f:v=>({critDmg:5*v})},
+  {n:"Lil Bit Of Crit", d:"치명타 확률 +1%/랭크", r:5, c:[50,100,150,200,250], f:v=>({crit:1*v})},
+  {n:"Strike First, No Mercy", d:"첫 공격 +5%/랭크 (2턴 뒤 소멸)", r:5, c:[100,200,300,400,500], f:v=>({multi:5*v}), sim:"first2"},
+  {n:"Combat Focus", d:"명상 다음 턴 +2%/랭크", r:5, c:[50,100,150,200,250], f:v=>({multi:2*v}), sim:"medi"},
+  {n:"Energy-Back Guarantee", d:"적 처치 시 에너지 +1", r:1, c:[500]},
+  {n:"Comeback", d:"체력 25% 이하 시 턴당 에너지 +1", r:1, c:[1000]}
+]],
+["방어 트리", [
+  {n:"Enduring Vessel", d:"기본 체력 +2/랭크", r:5, c:[25,50,75,100,125], hp:2},
+  {n:"Calm Mind", d:"명상 시 방어력 감소폭 −5%/랭크", r:3, c:[50,100,150]},
+  {n:"Battle Renewal", d:"전투 종료 회복량 +2.5%/랭크", r:4, c:[20,40,60,80]},
+  {n:"Mending", d:"턴당 회복 +0.5/랭크", r:5, c:[20,40,60,80,100]},
+  {n:"Chug, Chug, Chug", d:"포션 슬롯 확장", r:3, c:[100,200,300]},
+  {n:"Light Work, No Reaction", d:"QTE 난이도 −5%/랭크", r:5, c:[50,100,150,200,250]},
+  {n:"Run That Back", d:"QTE 실패·회피당함 시 쿨타임 1 감소", r:1, c:[500]},
+  {n:"Impervious", d:"전투 시작 시 저항 1", r:1, c:[750]},
+  {n:"Swiftfoot", d:"가드 중에도 회피 가능", r:1, c:[1000]}
+]],
+["유틸 트리", [
+  {n:"Essence Eater", d:"에센스 획득 +10%/랭크", r:5, c:[25,50,75,100,125]},
+  {n:"Uninteresting Loan", d:"시작 골드 +200/랭크", r:5, c:[25,50,75,100,125]},
+  {n:"Raphion's Resume", d:"언약·클래스 레벨 제한 −1/랭크", r:5, c:[50,100,150,200,250]},
+  {n:"Escape Artist", d:"탈출 확률 +2%/랭크", r:5, c:[25,50,75,100,125]},
+  {n:"Expert Harvester", d:"채집 25% 확률로 하나 더", r:1, c:[500]},
+  {n:"Even Further Beyond", d:"에센스 최대치 +100%/랭크", r:5, c:[25,50,75,100,125]},
+  {n:"Friends In High Places", d:"일루스트리스 포탈 즉시 개방", r:1, c:[100]},
+  {n:"Shifting Origins", d:"부활 위치 변경", r:1, c:[100]},
+  {n:"Path Maker", d:"초기화해도 마차 유지", r:1, c:[250]},
+  {n:"Soul Vault", d:"영혼 금고 슬롯 1개", r:1, c:[500]},
+  {n:"Overprepared Adventure", d:"시작 아이템 지원", r:5, c:[25,50,100,200,400]}
+]]
+];
+const soulEl = $("soulTree");
+SOUL.forEach(([branch, nodes], bi) => {
+  const box = document.createElement("div");
+  box.className = "mgroup";
+  box.innerHTML = '<h3>' + branch + ' <em class="btot"></em></h3>';
+  nodes.forEach((nd, ni) => {
+    const row = document.createElement("div");
+    row.className = "mrow off";
+    row.dataset.b = bi; row.dataset.i = ni;
+    row.innerHTML =
+      '<span style="font-family:JetBrains Mono,monospace;font-size:10px;color:var(--ink-faint)">' +
+        (nd.f || nd.dot || nd.hp ? "●" : "○") + '</span>' +
+      '<span class="nm" style="color:var(--ink)">' + nd.n + ' <span class="en">' + nd.d + '</span></span>' +
+      '<span class="ctl"><select class="rank">' +
+        Array.from({length: nd.r + 1}, (_, k) => '<option value="' + k + '">' + (k ? k + "랭크" : "미습득") + '</option>').join("") +
+      '</select></span><span class="eff"></span>';
+    box.appendChild(row);
+  });
+  soulEl.appendChild(box);
+});
+function soulState(ctx){
+  const acc = EMPTY(); let cost = 0, dot = 0, hp = 0; const lines = [];
+  soulEl.querySelectorAll(".mrow").forEach(row => {
+    const nd = SOUL[row.dataset.b][1][row.dataset.i];
+    const v = +row.querySelector(".rank").value;
+    const c = v ? nd.c.slice(0, v).reduce((a,b) => a+b, 0) : 0;
+    cost += c;
+    if (!ctx) row.classList.toggle("off", !v);
+    let eff = v ? c + "p" : "—";
+    if (v){
+      if (nd.dot){ dot += nd.dot * v; eff = "+" + (nd.dot*v) + "% 도트 · " + c + "p"; }
+      if (nd.hp){ hp += nd.hp * v; eff = "+" + (nd.hp*v) + " 체력 · " + c + "p"; }
+      if (nd.f){
+        const f = nd.f(v);
+        // 시뮬레이션에서는 턴 조건을 만족할 때만
+        const on = !ctx || !nd.sim ||
+          (nd.sim === "first2" ? ctx.turn <= 2 : nd.sim === "medi" ? ctx.afterMeditate : true);
+        if (on) for (const [k,val] of Object.entries(f)) acc[k] += val;
+        eff = Object.entries(f).map(([k,val]) => "+" + val + (k === "crit" ? "" : "%")).join(" ") + " · " + c + "p";
+        if (on) lines.push([nd.n + " " + v + "랭크", eff.split(" · ")[0]]);
+      }
+    }
+    if (!ctx) row.querySelector(".eff").textContent = eff;
+  });
+  if (ctx) return {acc, cost, dot, hp, lines};
+  SOUL.forEach(([b, nodes], bi) => {
+    let bc = 0;
+    soulEl.querySelectorAll('.mrow[data-b="' + bi + '"]').forEach(row => {
+      const nd = SOUL[bi][1][row.dataset.i], v = +row.querySelector(".rank").value;
+      bc += v ? nd.c.slice(0, v).reduce((a,x) => a+x, 0) : 0;
+    });
+    const max = nodes.reduce((a,nd) => a + nd.c.reduce((x,y) => x+y, 0), 0);
+    soulEl.querySelectorAll(".btot")[bi].textContent = "· " + bc + " / " + max + "p";
+  });
+  $("soulCnt").textContent = cost + "p";
+  return {acc, cost, dot, hp, lines};
+}
+
+/* ══════════ 4-a2. 마스터리 ══════════ */
+const MAST_NODES = {
+"몽크 (선·주먹)":       {start:"LCK", L:"SPD", M:"STR", R:"END"},
+"브롤러 (중립·주먹)":   {start:"END", L:"SPD", M:"STR", R:"LCK"},
+"다크레이서 (악·주먹)": {start:"SPD", L:"LCK", M:"END", R:"ARC"},
+"팔라딘 (선·검)":       {start:"LCK", L:"SPD", M:"STR", R:"END"},
+"블레이드 댄서 (중립·검)":{start:"LCK", L:"STR", M:"END", R:"SPD"},
+"버서커 (악·검)":       {start:"LCK", L:"SPD", M:"STR", R:"END"},
+"세인트 (선·창)":       {start:"LCK", L:"END", M:"ARC", R:"SPD"},
+"랜서 (중립·창)":       {start:"LCK", L:"SPD", M:"END", R:"STR"},
+"임패일러 (악·창)":     {start:"SPD", L:"STR", M:"ARC", R:"END"},
+"레인저 (선·단검)":     {start:"END", L:"ARC", M:"SPD", R:"LCK"},
+"로그 (중립·단검)":     {start:"END", L:"STR", M:"SPD", R:"LCK"},
+"어쌔신 (악·단검)":     {start:"SPD", L:"LCK", M:"ARC", R:"STR"},
+"라이온하트 (중립·도끼)":{start:"LCK", L:"STR", M:"END", R:"SPD"},
+"시타델 (선·망치)":     {start:"SPD", L:"STR", M:"END", R:"LCK"},
+"아비터 (중립·망치)":   {start:"SPD", L:"ARC", M:"END", R:"LCK"},
+"엘리멘탈리스트 (선·지팡이)":{start:"LCK", L:"SPD", M:"ARC", R:"END"},
+"헥서 (중립·지팡이)":   {start:"END", L:"SPD", M:"ARC", R:"LCK"},
+"네크로맨서 (악·지팡이)":{start:"LCK", L:"SPD", M:"ARC", R:"END"}
+};
+$("mastery").innerHTML =
+  '<div class="grid c3">' +
+    '<label><span class="k">시작 노드 <span class="en">4개 고정</span></span><input type="text" id="mStart" value="—" readonly></label>' +
+    '<label><span class="k">노드당 평균 스탯</span><input type="number" id="mPer" value="1" step="0.1" min="0"></label>' +
+    '<label><span class="k">돌파 노드</span><input type="number" id="mBreak" value="0" min="0" max="5" step="1"></label>' +
+  '</div>' +
+  '<div class="grid c3" style="margin-top:11px">' +
+    ["L","M","R"].map(k => '<label><span class="k"><span id="mLbl'+k+'">—</span> 노드 수</span>' +
+      '<input type="number" id="m'+k+'" value="0" min="0" max="12" step="1"></label>').join("") +
+  '</div>' +
+  '<div class="mrow" style="margin-top:10px;grid-template-columns:1fr auto"><span class="nm">획득 스탯</span>' +
+    '<span class="eff" id="mOut">—</span></div>';
+
+function masteryState(){
+  const nd = MAST_NODES[$("cls").value];
+  const bonus = {STR:0, ARC:0, END:0, SPD:0, LCK:0};
+  ["L","M","R"].forEach(k => $("mLbl"+k).textContent = nd ? STATS[nd[k]] : "—");
+  $("mStart").value = nd ? STATS[nd.start] + " 노드 4개" : "클래스를 먼저 고르세요";
+  if (!nd){ $("mOut").textContent = "—"; $("mastCnt").textContent = "0/35"; return {bonus, used:0}; }
+  const per = num("mPer");
+  bonus[nd.start] += 4 * per;
+  let used = 4;
+  ["L","M","R"].forEach(k => { const n = num("m"+k); bonus[nd[k]] += n * per; used += n; });
+  used += num("mBreak") * 5;
+  $("mastCnt").textContent = used + "/35";
+  $("mastCnt").style.color = used > 35 ? "var(--warn)" : "";
+  $("mOut").textContent = Object.entries(bonus).filter(([,v]) => v > 0)
+    .map(([k,v]) => STATS[k] + " +" + (+v.toFixed(1))).join(" · ") || "—";
+  return {bonus, used};
+}
+// 스탯 최종값 = 입력값 + 마스터리 보너스
+let CACHE = {soul:null, party:null, mb:{STR:0,ARC:0,END:0,SPD:0,LCK:0}};
+function refreshCache(){
+  CACHE.mb = masteryState().bonus;
+  CACHE.soul = soulState().acc;
+  CACHE.party = partyAcc().acc;
+}
+function MB(){ return CACHE.mb; }
+function SV(k){ return num(k) + CACHE.mb[k]; }
+
 /* ══════════ 4-b. 파티 ══════════ */
 const PARTY_BUFFS = [
   ["없음", {}, ""],
@@ -497,15 +653,16 @@ function scaleMul(){
   scalers.querySelectorAll(".scalerow").forEach(r => {
     const s = r.querySelector(".sStat").value;
     const d = parseFloat(r.querySelector(".sDiv").value) || 0;
-    if (d > 0){ scale += num(s)/d; parts.push(STATS[s] + "/" + d); }
+    if (d > 0){ scale += SV(s)/d; parts.push(STATS[s] + "/" + d); }
   });
   return {mul: 1 + scale, parts};
 }
 
 function critParts(M){
-  const c = Math.max(0, num("LCK") * parseFloat($("lckMode").value) + num("critAdd") + M.crit) / 100;
+  const LV = SV("LCK");
+  const c = Math.max(0, LV * parseFloat($("lckMode").value) + num("critAdd") + M.crit) / 100;
   const n = Math.floor(c), f = c - n;
-  const bonus = (num("LCK") >= 25 ? 1.10 : 1) + M.critDmg / 100;
+  const bonus = (LV >= 25 ? 1.10 : 1) + M.critDmg / 100;
   const lo = n === 0 ? 1 : (1 + n) * bonus;
   const hi = (2 + n) * bonus;
   return {c, f, n, lo, hi, expected: lo*(1-f) + hi*f, bonus};
@@ -565,7 +722,7 @@ function runSim(){
   const rows = [...simRows.querySelectorAll(".simrow")];
   if (!rows.length){ $("simTotal").textContent = "—"; return null; }
   const perTurn = num("nrgPerTurn");
-  const P = partyAcc(), dot = dotPerTurn(), hp0 = num("tgtHP");
+  const P = partyAcc(), SOU = soulState(), dot = dotPerTurn() * (1 + SOU.dot/100), hp0 = num("tgtHP");
   let nrg = 1, combo = 0, total = 0, cds = {}, afterMeditate = false, last = null, hp = hp0, killTurn = 0;
 
   rows.forEach((row, i) => {
@@ -585,8 +742,8 @@ function runSim(){
       else if (cds[sk.n] > 0){ bad = true; st = "⚠ 쿨타임 " + cds[sk.n] + "턴"; combo = 0; afterMeditate = false; }
       else {
         nrg -= sk.c; cds[sk.n] = sk.cd; combo++;
-        const M = mergeAcc(collectMods({turn, combo, afterMeditate}), P.acc);
-        const sc = sk.s.length ? 1 + sk.s.reduce((a,[st2,d]) => a + (d > 0 ? num(st2)/d : 0), 0) : scaleMul().mul;
+        const M = mergeAcc(mergeAcc(collectMods({turn, combo, afterMeditate}), P.acc), soulState({turn, afterMeditate}).acc);
+        const sc = sk.s.length ? 1 + sk.s.reduce((a,[st2,d]) => a + (d > 0 ? SV(st2)/d : 0), 0) : scaleMul().mul;
         const r = resolve(M, {base: sk.b, scale: sc});
         const k = critParts(M);
         dmg = (r.afterDR * k.expected + r.trueDmg) * sk.h;
@@ -619,7 +776,14 @@ let SIM = null;
 
 /* ══════════ 7. 메인 ══════════ */
 function calc(){
-  const M = mergeAcc(collectMods(null), partyAcc().acc);
+  refreshCache();
+  const SO = soulState();
+  const PA = partyAcc();
+  const M = mergeAcc(mergeAcc(collectMods(null), PA.acc), SO.acc);
+  const extra = SO.lines.map(([a,b]) => ["소울 · " + a, b])
+    .concat(PA.lines.map(([a]) => ["파티 · " + a, ""]));
+  if (extra.length) $("bd").insertAdjacentHTML("beforeend",
+    extra.map(([a,b]) => "<li><span>" + a + "</span><b>" + b + "</b></li>").join(""));
   const k = critParts(M);
   const r = resolve(M);
   const hits = Math.max(1, Math.round(num("hits")));
@@ -649,7 +813,7 @@ function calc(){
       ? "확정 " + tier[Math.min(k.n-1,4)] + " (×" + ((1+k.n)*k.bonus).toFixed(2) + "), " +
         (k.f*100).toFixed(0) + "% 확률로 " + tier[Math.min(k.n,4)] + " (×" + k.hi.toFixed(2) + ")"
       : cc.toFixed(0) + "% 확률로 크리티컬 (×" + k.hi.toFixed(2) + ")") +
-    (num("LCK") >= 25 ? " · 행운 25 마일스톤 +10% 반영" : "");
+    (SV("LCK") >= 25 ? " · 행운 25 마일스톤 +10% 반영" : "");
 
   runSim();
   renderCard(M, r, k, hits, expPerHit);
@@ -679,13 +843,18 @@ function renderCard(M, r, k, hits, expPerHit){
     (SIM ? '<div><div class="l">' + (SIM.killTurn ? "T" + SIM.killTurn + " 처치" : "시퀀스 총합") +
       '</div><div class="v">' + fmt(SIM.total) + '</div></div>' : "");
 
-  const maxStat = Math.max(150, ...Object.keys(STATS).map(s => num(s)));
+  const maxStat = Math.max(150, ...Object.keys(STATS).map(s => SV(s)));
   $("cardStats").innerHTML = Object.entries(STATS).map(([kk,label]) => {
-    const v = num(kk), ms = v >= 110 ? "110" : v >= 60 ? "60" : v >= 25 ? "25" : "";
+    const v = SV(kk), mb = MB()[kk], ms = v >= 110 ? "110" : v >= 60 ? "60" : v >= 25 ? "25" : "";
     return '<div class="statbar"><span>' + label + '</span>' +
       '<span class="track"><span class="fill" style="width:' + Math.min(100, v/maxStat*100).toFixed(1) + '%"></span></span>' +
-      '<span class="n">' + v + (ms ? ' <em>' + ms + '</em>' : "") + '</span></div>';
-  }).join("");
+      '<span class="n">' + (+v.toFixed(1)) + (mb ? ' <em>+' + (+mb.toFixed(1)) + '</em>' : "") +
+      (ms && !mb ? ' <em>' + ms + '</em>' : "") + '</span></div>';
+  }).join("") +
+  '<div style="font-size:10px;color:var(--ink-faint);margin-top:6px">' +
+    '소울 ' + soulState().cost + 'p · 마스터리 ' + masteryState().used + '/35' +
+    (MB().STR || MB().ARC || MB().END || MB().SPD || MB().LCK ? ' · <em style="font-style:normal;color:var(--gold)">+표시는 마스터리 보너스</em>' : "") +
+  '</div>';
 
   const slotHTML = (list, cap) => {
     const cells = list.map(x => '<div class="slot"><b>' + x.item.n + '</b><i>' +
@@ -706,6 +875,15 @@ function renderCard(M, r, k, hits, expPerHit){
     const stk = x.el.querySelector(".stk"), tier = x.el.querySelector(".tier");
     chips.push("<b>" + x.item.n + "</b>" + (tier ? " " + tier.selectedOptions[0].textContent : "") +
       (stk && +stk.value > 1 ? " ×" + stk.value : ""));
+  });
+  soulEl.querySelectorAll(".mrow").forEach(row => {
+    const v = +row.querySelector(".rank").value;
+    if (v) chips.push("소울 · <b>" + SOUL[row.dataset.b][1][row.dataset.i].n + "</b> " + v + "랭");
+  });
+  const mst = MAST_NODES[$("cls").value];
+  if (mst) ["L","M","R"].forEach(kk => {
+    const n = num("m" + kk);
+    if (n) chips.push("마스터리 · <b>" + STATS[mst[kk]] + "</b> 노드 ×" + n);
   });
   partyEl.querySelectorAll(".mrow").forEach((row, i) => {
     const b = PARTY_BUFFS[+row.querySelector(".pbuff").value];
@@ -735,6 +913,7 @@ function tabDots(){
   };
   const noParty = [...partyEl.querySelectorAll(".pbuff")].every(s => s.value === "0");
   dot("battle", noParty && !num("dotBurn") && !num("dotPoison") && $("dotBleed").value === "0");
+  dot("soul", soulState().cost === 0 && masteryState().used <= 4);
   dot("sim", simRows.querySelectorAll(".simrow").length === 0);
   dot("solve", !$("solveOut").innerHTML.trim());
 }
@@ -760,11 +939,12 @@ $("copyBuild").addEventListener("click", () => {
 const LCKM = () => parseFloat($("lckMode").value);
 
 function statScale(stats){
+  const MBC = MB();
   let s = 0;
   scalers.querySelectorAll(".scalerow").forEach(r => {
     const st = r.querySelector(".sStat").value;
     const d = parseFloat(r.querySelector(".sDiv").value) || 0;
-    if (d > 0) s += stats[st] / d;
+    if (d > 0) s += (stats[st] + MBC[st]) / d;
   });
   return 1 + s;
 }
@@ -780,7 +960,8 @@ function accOf(list){
   });
   return a;
 }
-function dmgWith(acc, stats){
+function dmgWith(acc0, stats){
+  const acc = mergeAcc(acc0, mergeAcc(CACHE.soul || EMPTY(), CACHE.party || EMPTY()));
   const hits = Math.max(1, Math.round(num("hits")));
   const scaled = num("base") * statScale(stats);
   const multi = 1 + (num("multi") + acc.multi) / 100;
@@ -790,9 +971,10 @@ function dmgWith(acc, stats){
   const dr = R >= 0 ? 100/(100+R) : Math.min(2, 2 - 100/(100+Math.abs(R)));
   const after = beforeDR * dr;
   const t = (num("trueFlat") + acc.trueFlat) * num("truedr") * (1 + num("trueMulti")/100);
-  const c = Math.max(0, stats.LCK * LCKM() + num("critAdd") + acc.crit) / 100;
+  const SL = stats.LCK + MB().LCK;
+  const c = Math.max(0, SL * LCKM() + num("critAdd") + acc.crit) / 100;
   const n = Math.floor(c), f = c - n;
-  const bonus = (stats.LCK >= 25 ? 1.10 : 1) + acc.critDmg / 100;
+  const bonus = (SL >= 25 ? 1.10 : 1) + acc.critDmg / 100;
   const lo = n === 0 ? 1 : (1+n) * bonus, hi = (2+n) * bonus;
   return (after * (lo*(1-f) + hi*f) + t) * hits;
 }
@@ -867,13 +1049,40 @@ function greedyPick(stats, pool, caps){
   return chosen;
 }
 
+function solveSoul(base, stats, budget){
+  const nodes = [];
+  SOUL.forEach(([b, ns], bi) => ns.forEach((nd, ni) => { if (nd.f) nodes.push({bi, ni, nd, rank:0}); }));
+  const planAcc = () => { const a = EMPTY(); nodes.forEach(x => { if (x.rank) for (const [k,v] of Object.entries(x.nd.f(x.rank))) a[k] += v; }); return a; };
+  let spent = 0;
+  for(;;){
+    CACHE.soul = planAcc();
+    const cur = dmgWith(base, stats);
+    let best = null, bestEff = 1e-12;
+    nodes.forEach(x => {
+      if (x.rank >= x.nd.r) return;
+      const cost = x.nd.c[x.rank];
+      if (spent + cost > budget) return;
+      x.rank++; CACHE.soul = planAcc();
+      const eff = (dmgWith(base, stats) - cur) / cost;
+      x.rank--;
+      if (eff > bestEff){ bestEff = eff; best = x; }
+    });
+    if (!best){ CACHE.soul = planAcc(); break; }
+    best.rank++; spent += best.nd.c[best.rank - 1];
+  }
+  return {picked: nodes.filter(x => x.rank > 0), spent};
+}
+
 function solve(){
+  refreshCache();
   const goal = num("goal"), budget = num("budget"), slots = Math.round(num("traitSlots"));
   const pool = candidates();
   const caps = {gear:4, art:2, trait: slots > 0 ? 1 : 0, cond: 99};
-  let stats = allocStats(EMPTY(), budget), chosen = [];
+  const soulBudget = num("soulBudget");
+  let stats = allocStats(EMPTY(), budget), chosen = [], soulPick = {picked:[], spent:0};
   for (let pass = 0; pass < 3; pass++){
     chosen = greedyPick(stats, pool, caps);
+    if (soulBudget > 0) soulPick = solveSoul(accOf(chosen), stats, soulBudget);
     stats = allocStats(accOf(chosen), budget);
   }
   let dmg = dmgWith(accOf(chosen), stats);
@@ -904,11 +1113,11 @@ function solve(){
     .map(c => ({c, d: dmgWith(accOf(chosen.concat([c])), stats) - dmg}))
     .sort((a,b) => b.d - a.d).slice(0,3).filter(x => x.d > 0.01);
 
-  render(chosen, contrib, nextUp, stats, dmg, goal, baseline, trimmed, slots);
-  window.__build = {chosen, stats};
+  render(chosen, contrib, nextUp, stats, dmg, goal, baseline, trimmed, slots, soulPick);
+  window.__build = {chosen, stats, soulPick};
 }
 
-function render(chosen, contrib, nextUp, stats, dmg, goal, baseline, trimmed, slots){
+function render(chosen, contrib, nextUp, stats, dmg, goal, baseline, trimmed, slots, soulPick){
   const ok = dmg >= goal;
   const groupOf = k => ({gear:"기어", art:"유물·인챈트", trait:"특성", cond:"상황·버프"})[k];
   const byKind = {};
@@ -949,6 +1158,10 @@ function render(chosen, contrib, nextUp, stats, dmg, goal, baseline, trimmed, sl
           return li(c.label, "+" + fmt(d ? d.d : 0));
         }).join("") + '</ul>').join("") +
 
+      (soulPick && soulPick.picked.length ?
+        '<h4 style="margin-top:12px">소울 트리 (' + soulPick.spent + 'p)</h4><ul>' +
+        soulPick.picked.map(x => li(x.nd.n + " " + x.rank + "랭크",
+          x.nd.c.slice(0, x.rank).reduce((a,b) => a+b, 0) + "p")).join("") + '</ul>' : "") +
       (trimmed.length ? '<h4 style="margin-top:12px">없어도 목표를 넘김</h4><ul>' +
         trimmed.map(c => li(c.label, "생략")).join("") + '</ul>' : "") +
 
@@ -961,10 +1174,17 @@ function render(chosen, contrib, nextUp, stats, dmg, goal, baseline, trimmed, sl
       '<div style="margin-top:12px"><button type="button" class="btn pri" id="applyBuild">이 빌드를 계산기에 적용</button></div>' +
     '</div>';
 
-  $("applyBuild").addEventListener("click", () => applyBuild(chosen, stats, slots));
+  $("applyBuild").addEventListener("click", () => applyBuild(chosen, stats, slots, soulPick));
 }
 
-function applyBuild(chosen, stats, slots){
+function applyBuild(chosen, stats, slots, soulPick){
+  if (soulPick){
+    soulEl.querySelectorAll(".rank").forEach(sel => sel.value = "0");
+    soulPick.picked.forEach(x => {
+      const row = soulEl.querySelector('.mrow[data-b="' + x.bi + '"][data-i="' + x.ni + '"]');
+      if (row) row.querySelector(".rank").value = String(x.rank);
+    });
+  }
   Object.entries(stats).forEach(([k,v]) => $(k).value = v);
   rowsOf.concat(clsRows).forEach(r => {
     if (r.tile){ r.el.setAttribute("aria-pressed","false"); r.el.querySelector(".tctl").hidden = true; }
