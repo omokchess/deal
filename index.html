@@ -2317,12 +2317,20 @@ $("solve").addEventListener("click", solve);
 $("cls").innerHTML = Object.keys(CLASSES).map(n => '<option value="'+n+'">'+n+'</option>').join("");
 function skillPool(){ return (CLASSES[$("cls").value] || {k:[]}).k.concat(subOf().k, markSkills()); }
 function fillSkills(){
+  const keep = $("skill").value !== "" && $("skill").selectedOptions[0]
+    ? $("skill").selectedOptions[0].textContent : null;
   $("skill").innerHTML = '<option value="">— 직접 입력 —</option>' +
     skillPool().map((s,i) => '<option value="'+i+'">'+s.n+'</option>').join("");
+  if (keep){   // 목록이 바뀌어도 고른 스킬은 유지
+    const again = [...$("skill").options].find(o => o.textContent === keep);
+    if (again) $("skill").value = again.value;
+  }
 }
 $("sub").innerHTML = Object.keys(SUBCLASSES).map(n => '<option value="'+n+'">'+n+'</option>').join("");
 $("cls").addEventListener("change", () => { fillSkills(); renderClassPassives(); refreshActions(); calc(); });
 $("sub").addEventListener("change", () => { fillSkills(); renderClassPassives(); refreshActions(); calc(); });
+// 마크 티어를 올리면 그 티어의 스킬이 목록에 바로 붙어야 한다
+$("markTiers").addEventListener("change", () => { fillSkills(); refreshActions(); calc(); });
 $("skill").addEventListener("change", () => {
   const i = $("skill").value;
   if (i === ""){ $("skillSp").innerHTML = ""; spRows = []; $("skillInfo").textContent = "베이스 클래스는 상위 슈퍼 클래스의 스킬을 그대로 따릅니다."; return; }
