@@ -45,10 +45,9 @@
   .sub{color:var(--ink-soft);font-size:13px;max-width:60ch;margin:6px 0 0}
   .sub code,code{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--ink)}
 
-  .layout{display:grid;grid-template-columns:300px minmax(0,1fr) 372px;gap:20px;align-items:start}
-  @media (max-width:1300px){.layout{grid-template-columns:280px minmax(0,1fr)}
-    .result{grid-column:1/-1;position:static}}
-  @media (max-width:820px){.layout{grid-template-columns:minmax(0,1fr)}}
+  .layout{display:grid;grid-template-columns:minmax(0,1fr) 372px;gap:20px;align-items:start}
+  @media (max-width:980px){.layout{grid-template-columns:minmax(0,1fr)}
+    .result{position:static}}
 
   fieldset{border:1px solid var(--line);border-radius:4px;background:var(--panel);
     padding:14px 16px 16px;margin:0 0 16px;box-shadow:var(--shadow)}
@@ -78,7 +77,7 @@
   .btn.pri{border-color:var(--gold);color:var(--ink)}
 
   /* ── 기어 타일 ── */
-  .tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:8px}
   .tile{position:relative;display:flex;flex-direction:column;justify-content:flex-start;gap:3px;
     min-height:78px;padding:8px 9px;text-align:left;cursor:pointer;
     border:1px solid var(--line);border-radius:4px;background:var(--panel-2);color:var(--ink-soft);
@@ -305,25 +304,12 @@
 
 <div class="layout">
 
-<!-- ───────── 왼쪽: 기어 선택 ───────── -->
-<aside>
-  <fieldset>
-    <legend>기어 <span class="cnt" id="gearCnt">0/4</span></legend>
-    <div class="tiles" id="tiles_gear"></div>
-    <p class="capmsg" id="cap_gear"></p>
-  </fieldset>
-  <fieldset>
-    <legend>유물 · 인챈트 <span class="cnt" id="artCnt">0/2</span></legend>
-    <div class="tiles" id="tiles_art"></div>
-    <p class="capmsg" id="cap_art"></p>
-  </fieldset>
-</aside>
-
 <!-- ───────── 가운데: 입력 ───────── -->
 <main>
 <div class="tabs" role="tablist">
   <button type="button" class="tab" role="tab" data-t="build" aria-selected="true">빌드<span class="dot" hidden></span></button>
-  <button type="button" class="tab" role="tab" data-t="soul" aria-selected="false">소울 · 마스터리<span class="dot" hidden></span></button>
+  <button type="button" class="tab" role="tab" data-t="gear" aria-selected="false">기어<span class="dot" hidden></span></button>
+  <button type="button" class="tab" role="tab" data-t="soul" aria-selected="false">소울 · 마크<span class="dot" hidden></span></button>
   <button type="button" class="tab" role="tab" data-t="battle" aria-selected="false">전투 · 파티<span class="dot" hidden></span></button>
   <button type="button" class="tab" role="tab" data-t="sim" aria-selected="false">시뮬레이션<span class="dot" hidden></span></button>
   <button type="button" class="tab" role="tab" data-t="solve" aria-selected="false">역산<span class="dot" hidden></span></button>
@@ -339,20 +325,6 @@
     <p class="hint" id="skillInfo">베이스 클래스는 상위 슈퍼 클래스의 스킬을 그대로 따릅니다. 서브 클래스 스킬은 목록에 <b>[서브]</b>로 붙습니다.</p>
     <div id="clsPassives"></div>
   </fieldset>
-  <fieldset>
-    <legend>무기 · 갑옷</legend>
-    <div class="grid c3">
-      <label><span class="k">무기</span><select id="weap"></select></label>
-      <label id="weapStkWrap" hidden><span class="k"><span id="weapStkLbl">스택</span></span>
-        <input type="number" id="weapStk" value="0" min="0" step="1"></label>
-      <label><span class="k">갑옷</span><select id="armor"></select></label>
-    </div>
-    <div class="mrow" style="grid-template-columns:1fr auto"><span class="nm" id="weapOut">—</span></div>
-    <div class="mrow" style="grid-template-columns:1fr auto"><span class="nm" id="armorOut">—</span></div>
-    <p class="hint">무기는 계열 효과만 반영합니다 (같은 계열이면 검·창·지팡이 상관없이 같은 효과).
-      갑옷의 <b>스탯 +N / +N%</b>는 「내 스탯」 위에 얹혀 계수와 치명타에 바로 들어가고, 체력·속성별 디펜스는 표시만 합니다.</p>
-  </fieldset>
-
   <fieldset>
     <legend>스킬 수치</legend>
     <div class="grid c3">
@@ -371,17 +343,35 @@
     </div>
     <div style="margin-top:12px" id="scalers"></div>
     <button type="button" class="btn" id="addScale">+ 계수 추가</button>
+    <div id="skillSp"></div>
     <p class="hint"><code>Base × (1 + Σ(스탯 ÷ 계수))</code> — 예) 근력 100, 계수 75 → ×2.333. 계수 분모가 트렐로에 없는 스킬은 0으로 들어오니 직접 채우세요.</p>
   </fieldset>
   <fieldset>
-    <legend>내 스탯</legend>
-    <div class="grid c5">
-      <label><span class="k">근력 <span class="en">STR</span></span><input type="number" id="STR" value="100"></label>
-      <label><span class="k">신비 <span class="en">ARC</span></span><input type="number" id="ARC" value="7"></label>
-      <label><span class="k">체력 <span class="en">END</span></span><input type="number" id="END" value="7"></label>
-      <label><span class="k">속도 <span class="en">SPD</span></span><input type="number" id="SPD" value="7"></label>
-      <label><span class="k">행운 <span class="en">LCK</span></span><input type="number" id="LCK" value="25"></label>
+    <legend>캐릭터</legend>
+    <div class="grid c3">
+      <label><span class="k">레벨</span><input type="number" id="lvl" value="50" min="1" max="60" step="1"></label>
+      <label><span class="k">종족</span><select id="race"></select></label>
+      <label><span class="k">전 스탯 보너스</span>
+        <select id="growth">
+          <option value="10">P1 개편 · 10레벨마다 +1</option>
+          <option value="5">현행 · 5레벨마다 +1</option>
+        </select></label>
     </div>
+    <div class="mrow" style="grid-template-columns:1fr auto;margin-top:8px">
+      <span class="nm" id="charOut">—</span><span class="eff" id="ptOut">—</span></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>스탯 배분 <span class="cnt" id="allocCnt">0/150</span></legend>
+    <div class="grid c5">
+      <label><span class="k">근력 <span class="en">배분</span></span><input type="number" id="STR" min="0" value="100"></label>
+      <label><span class="k">신비 <span class="en">배분</span></span><input type="number" id="ARC" min="0" value="7"></label>
+      <label><span class="k">체력 <span class="en">배분</span></span><input type="number" id="END" min="0" value="7"></label>
+      <label><span class="k">속도 <span class="en">배분</span></span><input type="number" id="SPD" min="0" value="7"></label>
+      <label><span class="k">행운 <span class="en">배분</span></span><input type="number" id="LCK" min="0" value="25"></label>
+    </div>
+    <div class="mrow" style="grid-template-columns:1fr;margin-top:8px">
+      <span class="nm" id="statOut" style="font-family:'JetBrains Mono',monospace;font-size:11.5px">—</span></div>
     <div class="grid c2" style="margin-top:11px">
       <label><span class="k">행운 → 치명타 확률</span>
         <select id="lckMode">
@@ -417,6 +407,47 @@
     <p class="hint">Reduc은 퍼센트가 아닙니다. <code>100 → 50% 감소</code>, <code>300 → 75% 감소</code>. 음수면 증폭이며 최대 2배에서 멈춥니다.</p>
   </fieldset>
 </div>
+<div class="tabpane" data-p="gear" hidden>
+  <fieldset>
+    <legend>기어 <span class="cnt" id="gearCnt">0/4</span></legend>
+    <div class="tiles" id="tiles_gear"></div>
+    <p class="capmsg" id="cap_gear"></p>
+  </fieldset>
+  <fieldset>
+    <legend>유물 · 인챈트 <span class="cnt" id="artCnt">0/2</span></legend>
+    <div class="tiles" id="tiles_art"></div>
+    <p class="capmsg" id="cap_art"></p>
+  </fieldset>
+  <fieldset>
+    <legend>무기 · 갑옷</legend>
+    <div class="grid c3">
+      <label><span class="k">무기</span><select id="weap"></select></label>
+      <label id="weapStkWrap" hidden><span class="k"><span id="weapStkLbl">스택</span></span>
+        <input type="number" id="weapStk" value="0" min="0" step="1"></label>
+      <label><span class="k">갑옷</span><select id="armor"></select></label>
+    </div>
+    <div class="mrow" style="grid-template-columns:1fr auto"><span class="nm" id="weapOut">—</span></div>
+    <div class="mrow" style="grid-template-columns:1fr auto"><span class="nm" id="armorOut">—</span></div>
+    <p class="hint">무기는 계열 효과만 반영합니다 (같은 계열이면 검·창·지팡이 상관없이 같은 효과).
+      갑옷의 <b>스탯 +N / +N%</b>는 「내 스탯」 위에 얹혀 계수와 치명타에 바로 들어가고, 체력·속성별 디펜스는 표시만 합니다.</p>
+  </fieldset>
+
+  <fieldset>
+    <legend>샤드 <span class="cnt" id="shardCnt">0/0</span></legend>
+    <div id="shardSlots" class="grid c3"></div>
+    <div class="mrow" style="grid-template-columns:1fr auto;margin-top:8px">
+      <span class="nm" id="shardOut">—</span></div>
+    <p class="hint">퓨어·레디언트 등급만 넣었습니다 (그 아래 등급은 트렐로 수치가 <code>?</code>). 슬롯 수는 무기 계열 기본값입니다.
+      조건부 샤드(스트라이킹·익스큐팅·섀터링·리버싱)는 시뮬레이션에서 그 턴의 대상 체력·디버프 수로 자동 판정합니다.</p>
+  </fieldset>
+
+  <fieldset>
+    <legend>착용 중 기어 스탯</legend>
+    <div id="gearStatOut" class="mrow" style="grid-template-columns:1fr"><span class="nm">—</span></div>
+    <p class="hint">기어의 <b>고정 스탯</b>만 반영합니다. 티어별 추가 스탯(T1~T6 랜덤 롤)은 아직 안 넣었습니다.
+      대상이 착용하는 기어(마그마 참, 몰튼 캐라피스 등)는 상대 것이라 내 스탯에 더하지 않습니다.</p>
+  </fieldset>
+</div>
 <div class="tabpane" data-p="soul" hidden>
   <fieldset>
     <legend>소울 트리 <span class="cnt" id="soulCnt">0p</span></legend>
@@ -424,6 +455,19 @@
     <p class="hint">소울 포인트는 환생 시 지급됩니다 — 베이스 클래스 20 / 슈퍼 클래스 50 / 첫 보스 50 / 유물 장착 75 / 언약 10레벨 50 / 20레벨 75.
       트렐로에 적힌 갈래별 합계(공격 6,150 · 방어 4,275 · 유틸 3,975)는 나열된 노드 비용을 더한 값과 맞지 않습니다. 여기 표시되는 합계는 노드 비용을 실제로 더한 값입니다.</p>
   </fieldset>
+  <fieldset>
+    <legend>마크</legend>
+    <div class="grid c3" id="markTiers"></div>
+    <div class="grid c2" style="margin-top:11px">
+      <label><span class="k">Permuth · 오른 스탯 <span class="en">+40%</span></span>
+        <select id="permuthStat"><option value="">— 미사용 —</option></select></label>
+      <label><span class="k">Edo · 받은 버프</span>
+        <select id="edoBuff"><option value="">— 미사용 —</option></select></label>
+    </div>
+    <p class="hint">랜덤으로 뜨는 버프는 실제로 뜬 것을 직접 고르세요. Permuth의 스탯 +40%는 최종 스탯에 곱해집니다.
+      Edo의 버프는 속도·방어·회복 쪽이라 내 피해량에는 직접 들어가지 않고, 고른 내용만 빌드 시트에 남습니다.</p>
+  </fieldset>
+
   <fieldset>
     <legend>마스터리 <span class="cnt" id="mastCnt">0/35</span></legend>
     <div id="mastery"></div>
@@ -444,6 +488,8 @@
       <label><span class="k">중독 스택 <span class="en">1/스택</span></span><input type="number" id="dotPoison" value="0" min="0" step="1"></label>
       <label><span class="k">출혈 <span class="en">3% · 행동 시</span></span>
         <select id="dotBleed"><option value="0">없음</option><option value="1">있음</option></select></label>
+      <label><span class="k">내 상태이상 수 <span class="en">리버싱 샤드</span></span>
+        <input type="number" id="selfDeb" value="0" min="0" step="1"></label>
     </div>
     <p class="hint">도트는 대상 최대 체력 기준으로 턴마다 자동 적용됩니다. 화상 0.7%/스택, 유령 불꽃 3.85%, 출혈 3%, 중독 스택당 1.
       보스는 이 값의 10%만 받습니다.</p>
@@ -476,7 +522,7 @@
     <legend>빌드 역산</legend>
     <div class="grid c3">
       <label><span class="k">목표 최종 피해량</span><input type="number" id="goal" value="400" step="10"></label>
-      <label><span class="k">스탯 포인트</span><input type="number" id="budget" value="150" step="5"></label>
+      <label><span class="k">스탯 포인트</span><input type="number" id="budget" value="150" step="5" title="레벨×3, 최대 150"></label>
       <label><span class="k">특성 슬롯</span><input type="number" id="traitSlots" value="10" min="0" max="10" step="1"></label>
       <label><span class="k">쓸 수 있는 소울 포인트</span><input type="number" id="soulBudget" value="0" min="0" step="50"></label>
     </div>
@@ -891,6 +937,146 @@ const ARMORS = {
 "여행가":                      {hp:0, def:"능력 없음 (코디용)"}
 };
 
+/* ══════════ 2-e. 종족 기본 스탯 ══════════ */
+const RACES = {
+"에스텔라 (22%)":   {STR:2, ARC:2, END:2, SPD:1, LCK:1},
+"니세 (18%)":       {STR:1, ARC:3, END:1, SPD:1, LCK:2},
+"스툴투스 (18%)":   {STR:2, ARC:1, END:1, SPD:3, LCK:1},
+"바스타얀 (9%)":    {STR:1, ARC:2, END:1, SPD:3, LCK:2},
+"베네리 (6%)":      {STR:2, ARC:1, END:2, SPD:2, LCK:2},
+"드라우가 (6%)":    {STR:1, ARC:2, END:2, SPD:2, LCK:2},
+"오피마르 (6%)":    {STR:2, ARC:1, END:1, SPD:3, LCK:2},
+"다미노스 (3%)":    {STR:1, ARC:2, END:3, SPD:3, LCK:1},
+"코르볼루스 (3%)":  {STR:1, ARC:3, END:1, SPD:2, LCK:2},
+"아르보리비아 (3%)":{STR:1, ARC:3, END:2, SPD:3, LCK:1},
+"칼버리 (3%)":      {STR:2, ARC:1, END:4, SPD:2, LCK:2},
+"듀라한 (1%)":      {STR:1, ARC:2, END:4, SPD:1, LCK:2},
+"바이디어 (1%)":    {STR:1, ARC:1, END:3, SPD:2, LCK:2},
+"보레아스 (1%)":    {STR:3, ARC:3, END:4, SPD:1, LCK:1},
+"렌텀":             {STR:1, ARC:1, END:3, SPD:2, LCK:1},
+"아모루스":         {STR:4, ARC:4, END:4, SPD:4, LCK:4},
+"그닉스":           {STR:4, ARC:1, END:8, SPD:1, LCK:1},
+"시아":             {STR:3, ARC:3, END:1, SPD:1, LCK:2},
+"인페리온":         {STR:3, ARC:1, END:4, SPD:1, LCK:1}
+};
+
+/* ══════════ 2-f. 기어 고정 스탯 ══════════ */
+const GEAR_STATS = {
+"행운의 뿔":{SPD:4}, "결정화된 가시":{STR:4}, "피어나는 눈꽃":{ARC:4}, "세월의 장":{LCK:4},
+"감염된 신체":{END:2, STR:2}, "쉐도우 건틀렛":{END:4}, "엘레멘튜리 리소넌스":{ARC:3},
+"포레스트 참":{ARC:3}, "불칸 너클":{STR:2, END:1}, "샤드 오브 블라이트":{ARC:2, END:2},
+"밴드 오브 크러싱 포스":{STR:2, END:1}, "래미즈칸 아이돌":{STR:3}, "배인글로리우스 로켓":{SPD:5},
+"포커스드 마인드":{ARC:3}, "스파이크드 스틸 볼":{STR:3}, "에버비팅 드럼":{STR:4},
+"임퓨어 크라운":{ARC:4}, "크리스탈 스패어":{LCK:3}, "프로즌 디아뎀":{LCK:4},
+"티어 블러드 크리스탈":{LCK:2, END:1}, "글래밍 캐럿":{END:1}, "크리스탈라이즈드 스타":{LCK:4},
+"야툴 워레스 (과열)":{STR:2, SPD:2}, "코아귤레이트 핑거 네일":{STR:2, ARC:2},
+"마그마 참":{SPD:2, END:1}, "몰튼 캐라피스":{END:3}, "위키드 크라운":{END:3},
+"에그 셸멧":{END:3}, "레빗 펠트":{END:2}, "데저트 에스커쳔":{END:3},
+"에스펙트 오브 맬라답션":{END:3}
+};
+// 상대가 착용하는 기어 — 내 스탯에는 더하지 않는다
+const TARGET_GEAR = new Set(["마그마 참","몰튼 캐라피스","위키드 크라운","에그 셸멧","레빗 펠트",
+                             "코아귤레이트 핑거 네일","에스펙트 오브 맬라답션","감염된 신체"]);
+
+/* ══════════ 2-g. 스킬 특수능력 · 부여 디버프 ══════════
+   sp: 조건부 능력(체크박스로 켬) | deb: 적중 시 부여하는 디버프        */
+const SKILL_EXTRA = {
+"Strike":                {deb:[]},
+"Blazing Barrage":       {deb:[["화상",3]], sp:[["과부하 중 (영혼 불꽃 확률)", {}]]},
+"Flame Drop":            {deb:[["화상",3]], sp:[["과부하 중 피해 증가", {multi:25}]]},
+"Crushing Strike":       {sp:[["새 디버프 부여 (Crusher 3턴)", {multi:7}]]},
+"Party Table":           {deb:[["취약",2],["출혈",2]], sp:[["대상 취약 상태 · 마지막 타 +20%", {multi:20}]]},
+"Burst Combo":           {sp:[["첫타 근력/50 · 이후 근력/75", {}]]},
+"Dark Smite":            {deb:[["약화",2]]},
+"Darkcore Eruption":     {sp:[["소모한 다크 코어 1개당 +5%", {multi:5}]]},
+"Head Splitter":         {deb:[["취약",2]], sp:[["공격 후 피해량 +10% 획득", {multi:10}]]},
+"Carnage":               {sp:[["추가 소모 에너지 1당 +20% (최대 100%)", {multi:20}]]},
+"Impaling Strike":       {deb:[["출혈",2]]},
+"Flowing Dance":         {sp:[["Unending Flow 연속 스택", {multi:5}]]},
+"Light Burst":           {sp:[["마스터리 강화 +30%", {multi:30}]]},
+"Discharge":             {deb:[["기절",1]]},
+"Empowered Piercer":     {sp:[["충전 최대치 +38%", {multi:38}]]},
+"Rending Barrage":       {deb:[["출혈",3]], sp:[["대상 출혈 상태 · 추가타 13.5", {flat:13.5}]]},
+"Bloody Burst":          {deb:[["출혈",2]]},
+"Blood Eruption":        {sp:[["마스터리 강화 · 주고받는 피해 +20%", {multi:20}]]},
+"Flourish":              {deb:[["출혈",2]]},
+"Stinger":               {deb:[["중독",3]], sp:[["광역 추가 피해 10", {flat:10}]]},
+"Poison Trap":           {deb:[["중독",4]]},
+"Slash Barrage":         {deb:[["출혈",2]], sp:[["대상 출혈 · Vital Strike +20%", {multi:20}]]},
+"Dagger Spread":         {deb:[["실명",2]]},
+"Stealth Strike":        {sp:[["은신 상태 · 피해 2배", {finalMul:2}],["Shadow Master +30%", {multi:30}]]},
+"Poison Fan":            {deb:[["중독",4]]},
+"Daybreak":              {deb:[["화상",3]]},
+"Crucible":              {deb:[["실명",2]]},
+"Litigate":              {sp:[["대상 카르마 보유 · 확정 발동", {}]]},
+"Injunction":            {sp:[["강화 · 기본 피해량 5", {}]]},
+"Pronouncement":         {sp:[["대상 카르마 보유 · 기본 25", {}]]},
+"Blaze":                 {deb:[["화상",4]], sp:[["대상 화상 상태 +15%", {multi:15}]]},
+"Lightning Crash":       {deb:[["기절",1]], sp:[["추가 에너지 1당 계수 분모 −2.5", {}]]},
+"Gale Uplift":           {deb:[["구속",2]]},
+"Dark Glare":            {deb:[["저주",3]]},
+"Inverse Abyss":         {deb:[["분열",3]]},
+"Darklight Drain":       {sp:[["피해량의 80% 흡혈", {}]]},
+"Bone Spray":            {deb:[["출혈",2]]},
+"[서브] 마크":           {sp:[["막기·회피 불가", {}]]},
+"[서브] 혼합물 투척":     {deb:[["취약",3],["약화",3]], sp:[["막기·회피 불가", {}]]},
+"[서브] The Right Angle":{deb:[["구속",4]]},
+"코니수라 (Conisura)":    {sp:[["대상 디버프 종류당 기본 +3 (헥스는 개당 +6)", {}]]}
+};
+
+/* ══════════ 2-h. 디버프 정의 ══════════
+   dur: 턴 지속 | stk: 스택형 | mul: 대상이 받는 피해 % | dot: 최대 체력 %       */
+const DEBUFFS = {
+"취약":     {dur:true,  mul:20,  d:"받는 피해 +20%"},
+"골절":     {dur:true,  mul:35,  d:"물리·마법 피해 +35%"},
+"약화":     {dur:true,  self:-20, d:"주는 피해 −20% (내가 걸린 경우)"},
+"헥스":     {stk:true,  hit:2,   d:"한 타 2배, 맞으면 1 소모"},
+"분열":     {dur:true,  aff:1,   d:"모든 저항 무효"},
+"화상":     {stk:true,  dot:0.7, d:"턴당 최대 체력 0.7%/스택"},
+"유령 불꽃":{stk:true,  dot:3.85,d:"턴당 최대 체력 3.85%"},
+"출혈":     {dur:true,  dot:3,   d:"행동 시 최대 체력 3%"},
+"중독":     {stk:true,  dotFlat:1, d:"턴당 스택당 1"},
+"저주":     {stk:true,  d:"인커밍·아웃고잉 힐 −20%/스택"},
+"실명":     {dur:true,  d:"막기·회피 바 축소"},
+"구속":     {dur:true,  d:"탈출 차단 · 막기/회피 삭제"},
+"기절":     {dur:true,  d:"턴 스킵"}
+};
+
+/* ══════════ 2-i. 마크 ══════════ */
+const MARKS = {
+"피텐트": {t2:"코니수라", t3:"도미니어",
+  k:[{n:"코니수라 (Conisura)", b:5, h:1, c:3, cd:10, e:"마법", s:[["STR",75],["ARC",75]],
+      x:"단일 적의 모든 디버프 삭제 · 종류당 기본 +3, 헥스는 개당 +6", tier:2, consumeDeb:true}]},
+"베니아": {t2:"Permuth", t3:"Venian",
+  k:[{n:"Permuth (버프)", b:0, h:1, c:2, cd:10, e:"마법", s:[],
+      x:"체력 5% 희생 · 무작위 스탯 +40% (3턴)", tier:2, randStat:true}]},
+"아스트라":{t2:"Edo", t3:"Utor",
+  k:[{n:"Edo (팀 버프)", b:0, h:1, c:1, cd:8, e:"마법", s:[],
+      x:"스파크 5개 이상 · 팀 전체 랜덤 버프 (5턴)", tier:2, randBuff:true},
+     {n:"Utor (자힐)", b:0, h:1, c:1, cd:7, e:"마법", s:[],
+      x:"스파크 2개 소모 · 최대 체력 40%까지 회복, 8개면 에너지", tier:3}]}
+};
+const EDO_BUFFS = ["속도 증가", "방어력 증가", "회복량 증가", "디버프 제거", "인챈트 발동 확률 증가"];
+
+/* ══════════ 2-j. 샤드 (퓨어 / 레디언트) ══════════
+   cond: none | hpHigh(대상 80%↑) | hpLow(대상 25%↓) | debTgt(대상 디버프 수) | debSelf(내 디버프 수) */
+const SHARDS = {
+"— 비움 —":      {p:0,    r:0,    cond:"none",   d:""},
+"엠파워링":      {p:3.4,  r:4.1,  cond:"none",   d:"피해량 증가"},
+"스트라이킹":    {p:7.52, r:8.2,  cond:"hpHigh", d:"대상 체력 80% 이상"},
+"익스큐팅":      {p:10,   r:10,   cond:"hpLow",  d:"대상 체력 25% 이하 (퓨어 수치 미공개 — 레디언트 값 사용)"},
+"섀터링":        {p:0.625,r:0.75, cond:"debTgt", d:"대상 디버프 1개당"},
+"리버싱":        {p:4.5,  r:5.12, cond:"debSelf",d:"내 상태이상 1개당"},
+"볼태익":        {p:0,    r:0,    cond:"none",   d:"타수당 에너지 확률 10% — 피해 영향 없음"},
+"리제네이티브":  {p:0,    r:0,    cond:"none",   d:"흡혈 0.7% / 0.75% — 피해 영향 없음"}
+};
+const WEAPON_SLOTS = {
+"페러스 (기본)":6, "블랙스틸":4, "제이드":5, "대검 (Great Sword)":6, "용골 (야툴)":3,
+"역병 (토리안)":3, "흑혈통 (메트롬 베셀)":2, "태양 (세라폰)":3, "태초 (핸다콘다)":4,
+"사암 (핸다콘다)":3, "아이스린드":3, "아이보리":3, "코어알로이":3, "바스틱 글래이브":3,
+"슬라임 (킹 슬라임)":3, "곡괭이":0, "— 없음 —":0
+};
+
 const ELEM_DEFAULT = 1;
 
 /* ══════════ 3. 렌더 ══════════ */
@@ -984,6 +1170,44 @@ function renderClassPassives(){
   host.appendChild(box);
 }
 
+/* ── 스킬 특수능력 ── */
+let spRows = [];
+function renderSkillSp(){
+  const host = $("skillSp"); host.innerHTML = ""; spRows = [];
+  const i = $("skill").value;
+  if (i === "") return;
+  const sk = skillPool()[+i];
+  const ex = SKILL_EXTRA[sk.n];
+  if (!ex) return;
+  const box = document.createElement("div");
+  box.className = "mgroup"; box.style.marginTop = "12px";
+  box.innerHTML = "<h3>이 스킬의 특수 능력</h3>";
+  (ex.sp || []).forEach(([label, f], ii) => {
+    const id = "sp_" + ii;
+    const row = document.createElement("div");
+    row.className = "mrow off";
+    const has = f && Object.keys(f).length;
+    row.innerHTML = has
+      ? '<input type="checkbox" id="'+id+'"><label class="nm" for="'+id+'">'+label+'</label>' +
+        '<span class="ctl"></span><span class="eff"></span>'
+      : '<span></span><span style="color:var(--ink-faint);font-size:12px">'+label+'</span>' +
+        '<span></span><span class="eff">수치 없음</span>';
+    box.appendChild(row);
+    if (has) spRows.push({el:row, item:{n:label, f}, grp:{}, tile:false});
+  });
+  (ex.deb || []).forEach(([n, v]) => {
+    const D = DEBUFFS[n] || {};
+    const row = document.createElement("div");
+    row.className = "mrow";
+    row.innerHTML = '<span style="color:var(--corrupt);font-size:10px">▼</span>' +
+      '<span style="font-size:12px">부여 · <b style="font-weight:500">'+n+'</b> ' +
+        (D.stk ? v + "스택" : v + "턴") + ' <span class="en">'+(D.d||"")+'</span></span>' +
+      '<span></span><span class="eff" style="color:var(--corrupt)">시뮬레이션 반영</span>';
+    box.appendChild(row);
+  });
+  if (box.children.length > 1) host.appendChild(box);
+}
+
 /* ── 계수 행 ── */
 const scalers = $("scalers");
 function addScaler(stat="STR", div=75){
@@ -1037,7 +1261,7 @@ function readRow(r, ctx){
 
 function collectMods(ctx){
   const acc = EMPTY(), lines = [];
-  const all = rowsOf.concat(clsRows);
+  const all = rowsOf.concat(clsRows, spRows);
   all.forEach(r => {
     const {on, f, n, eff} = readRow(r, ctx);
     if (!ctx){
@@ -1234,6 +1458,69 @@ function masteryState(){
   return {bonus, used};
 }
 // 스탯 최종값 = 입력값 + 마스터리 보너스
+$("race").innerHTML = Object.keys(RACES).map(n => '<option value="'+n+'">'+n+'</option>').join("");
+
+/* 레벨·종족 → 기본 스탯, 배분 가능 포인트 */
+function charState(){
+  const lv = Math.max(1, Math.round(num("lvl")));
+  const race = RACES[$("race").value] || {STR:0,ARC:0,END:0,SPD:0,LCK:0};
+  const every = parseFloat($("growth").value);
+  const bonus = Math.floor(lv / every);
+  const base = {}; for (const k of Object.keys(STATS)) base[k] = race[k] + bonus;
+  const budget = Math.min(150, lv * 3);
+  const used = Object.keys(STATS).reduce((a,k) => a + num(k), 0);
+  $("charOut").innerHTML = "기본 스탯 " +
+    Object.keys(STATS).map(k => STATS[k] + " " + base[k]).join(" · ") +
+    ' <span class="en">(종족 + 레벨 보너스 +' + bonus + ')</span>';
+  $("ptOut").textContent = "배분 " + used + " / " + budget;
+  $("ptOut").style.color = used > budget ? "var(--warn)" : "";
+  $("allocCnt").textContent = used + "/" + budget;
+  return {base, budget, used, lv};
+}
+
+/* 마크 티어 · 랜덤 버프 */
+$("markTiers").innerHTML = Object.entries(MARKS).map(([n,mk]) =>
+  '<label><span class="k">' + n + ' <span class="en">T2 ' + mk.t2 + '</span></span>' +
+  '<select class="markT" data-m="' + n + '">' +
+    [0,1,2,3].map(t => '<option value="'+t+'">'+(t ? "티어 "+t : "미보유")+'</option>').join("") +
+  '</select></label>').join("");
+$("permuthStat").innerHTML = '<option value="">— 미사용 —</option>' +
+  Object.entries(STATS).map(([k,v]) => '<option value="'+k+'">'+v+' +40%</option>').join("");
+$("edoBuff").innerHTML = '<option value="">— 미사용 —</option>' +
+  EDO_BUFFS.map(b => '<option value="'+b+'">'+b+'</option>').join("");
+
+function markState(){
+  const tiers = {};
+  document.querySelectorAll(".markT").forEach(sel => tiers[sel.dataset.m] = +sel.value);
+  const pct = {STR:0,ARC:0,END:0,SPD:0,LCK:0};
+  const p = $("permuthStat").value;
+  if (p && tiers["베니아"] >= 2) pct[p] += 40;
+  return {tiers, pct, edo: tiers["아스트라"] >= 2 ? $("edoBuff").value : ""};
+}
+function markSkills(){
+  const t = markState().tiers, out = [];
+  Object.entries(MARKS).forEach(([n,mk]) => mk.k.forEach(sk => { if ((t[n]||0) >= sk.tier) out.push(sk); }));
+  return out;
+}
+
+/* 착용 기어의 고정 스탯 */
+function gearStatBonus(){
+  const b = {STR:0,ARC:0,END:0,SPD:0,LCK:0}; const names = [];
+  document.querySelectorAll('#tiles_gear .tile[aria-pressed="true"]').forEach(el => {
+    const n = el.querySelector(".tn").textContent;
+    if (TARGET_GEAR.has(n)) return;
+    const st = GEAR_STATS[n]; if (!st) return;
+    for (const [k,v] of Object.entries(st)) b[k] += v;
+    names.push(n + " (" + Object.entries(st).map(([k,v]) => STATS[k] + "+" + v).join(", ") + ")");
+  });
+  const out = $("gearStatOut");
+  if (out) out.querySelector(".nm").innerHTML = names.length
+    ? names.join(" · ") + ' <b style="color:var(--gold)">→ 합계 ' +
+      Object.entries(b).filter(([,v]) => v).map(([k,v]) => STATS[k] + " +" + v).join(" · ") + '</b>'
+    : "착용한 기어 없음";
+  return b;
+}
+
 $("weap").innerHTML = Object.keys(WEAPONS).map(n => '<option value="'+n+'">'+n+'</option>').join("");
 $("armor").innerHTML = Object.keys(ARMORS).map(n => '<option value="'+n+'">'+n+'</option>').join("");
 $("weap").value = "페러스 (기본)";
@@ -1251,6 +1538,41 @@ function weaponState(){
     (eff ? ' <span class="en" style="color:var(--gold)">→ ' + eff + '</span>' : "");
   return {acc, name:$("weap").value};
 }
+function shardState(ctx){
+  const slots = WEAPON_SLOTS[$("weap").value] || 0;
+  const host = $("shardSlots");
+  if (host.children.length !== slots){
+    host.innerHTML = Array.from({length: slots}, (_, i) =>
+      '<label><span class="k">슬롯 ' + (i+1) + '</span>' +
+      '<select class="shType">' + Object.keys(SHARDS).map(n => '<option value="'+n+'">'+n+'</option>').join("") + '</select>' +
+      '<select class="shGrade" style="margin-top:4px"><option value="p">퓨어</option><option value="r">레디언트</option></select>' +
+      '</label>').join("");
+  }
+  $("shardCnt").textContent = [...host.querySelectorAll(".shType")].filter(x => x.value !== "— 비움 —").length + "/" + slots;
+
+  const acc = EMPTY(); const lines = [];
+  const hpPct = ctx ? ctx.hpPct : 100;
+  const debTgt = ctx ? ctx.debTgt : (num("dotBurn") ? 1 : 0) + (num("dotPoison") ? 1 : 0) + (+$("dotBleed").value ? 1 : 0);
+  const debSelf = num("selfDeb");
+  host.querySelectorAll("label").forEach(l => {
+    const t = l.querySelector(".shType").value, gr = l.querySelector(".shGrade").value;
+    const sh = SHARDS[t]; if (!sh || t === "— 비움 —") return;
+    const v = gr === "r" ? sh.r : sh.p;
+    let mult = 0;
+    if (sh.cond === "none") mult = v;
+    else if (sh.cond === "hpHigh") mult = hpPct >= 80 ? v : 0;
+    else if (sh.cond === "hpLow") mult = hpPct <= 25 ? v : 0;
+    else if (sh.cond === "debTgt") mult = v * debTgt;
+    else if (sh.cond === "debSelf") mult = v * debSelf;
+    acc.multi += mult;
+    lines.push(t + (gr === "r" ? " R" : " P") + (mult ? " +" + (+mult.toFixed(2)) + "%" : " (조건 미충족)"));
+  });
+  if (!ctx) $("shardOut").innerHTML = lines.length
+    ? lines.join(" · ") + ' <b style="color:var(--gold)">→ 합계 +' + (+acc.multi.toFixed(2)) + '%</b>'
+    : "장착한 샤드 없음";
+  return acc;
+}
+
 function armorState(){
   const a = ARMORS[$("armor").value] || ARMORS["— 없음 —"];
   const flat = {STR:0,ARC:0,END:0,SPD:0,LCK:0}, pct = {STR:0,ARC:0,END:0,SPD:0,LCK:0};
@@ -1266,16 +1588,19 @@ function armorState(){
   return {flat, pct, hp:a.hp || 0, hpPct:a.hpPct || 0, name:$("armor").value};
 }
 
-let CACHE = {soul:null, party:null, weapon:null, ar:{flat:{STR:0,ARC:0,END:0,SPD:0,LCK:0}, pct:{STR:0,ARC:0,END:0,SPD:0,LCK:0}}, mb:{STR:0,ARC:0,END:0,SPD:0,LCK:0}};
+let CACHE = {mk:{pct:{STR:0,ARC:0,END:0,SPD:0,LCK:0}, tiers:{}, edo:""}, ch:{base:{STR:0,ARC:0,END:0,SPD:0,LCK:0}, budget:150, used:0, lv:50}, gs:{STR:0,ARC:0,END:0,SPD:0,LCK:0}, soul:null, party:null, weapon:null, ar:{flat:{STR:0,ARC:0,END:0,SPD:0,LCK:0}, pct:{STR:0,ARC:0,END:0,SPD:0,LCK:0}}, mb:{STR:0,ARC:0,END:0,SPD:0,LCK:0}};
 function refreshCache(){
+  CACHE.mk = markState();
+  CACHE.ch = charState();
+  CACHE.gs = gearStatBonus();
   CACHE.mb = masteryState().bonus;
   CACHE.soul = soulState().acc;
   CACHE.party = partyAcc().acc;
-  CACHE.weapon = weaponState().acc;
+  CACHE.weapon = mergeAcc(weaponState().acc, shardState(null));
   CACHE.ar = armorState();
 }
 function MB(){ return CACHE.mb; }
-function SV(k){ return (num(k) + CACHE.mb[k] + CACHE.ar.flat[k]) * (1 + CACHE.ar.pct[k] / 100); }
+function SV(k){ return (CACHE.ch.base[k] + num(k) + CACHE.gs[k] + CACHE.mb[k] + CACHE.ar.flat[k]) * (1 + (CACHE.ar.pct[k] + CACHE.mk.pct[k]) / 100); }
 
 /* ══════════ 4-b. 파티 ══════════ */
 const PARTY_BUFFS = [
@@ -1382,7 +1707,7 @@ function actionOptions(){
   const uni = CLASSES["공용"].k;
   const own = $("cls").value === "공용" ? [] : (CLASSES[$("cls").value] || {k:[]}).k;
   const list = [["명상","명상 (에너지 +2)"],["방어","방어"],["대기","대기"]];
-  uni.concat(own, subOf().k).forEach(s => list.push(["s:"+s.n, s.n + "  ("+s.c+"NRG · CD"+s.cd+")"]));
+  uni.concat(own, subOf().k, markSkills()).forEach(s => list.push(["s:"+s.n, s.n + "  ("+s.c+"NRG · CD"+s.cd+")"]));
   return list;
 }
 function addTurn(pick){
@@ -1407,7 +1732,7 @@ function refreshActions(){
 }
 
 function skillByName(n){
-  for (const c of Object.values(CLASSES).concat(Object.values(SUBCLASSES))){
+  for (const c of Object.values(CLASSES).concat(Object.values(SUBCLASSES), Object.values(MARKS))){
     const f = c.k.find(s => s.n === n); if (f) return f;
   }
   return null;
@@ -1418,8 +1743,42 @@ function runSim(){
   if (!rows.length){ $("simTotal").textContent = "—"; return null; }
   const perTurn = num("nrgPerTurn");
   const WA = weaponState().acc;
-  const P = partyAcc(), SOU = soulState(), dot = dotPerTurn() * (1 + SOU.dot/100), hp0 = num("tgtHP");
+  const P = partyAcc(), SOU = soulState(), hp0 = num("tgtHP");
+  const bossMul = parseFloat($("tgtType").value), dotScale = (1 + SOU.dot/100) * bossMul;
+  // 전투 설정의 도트 수치는 "시작 시점" 상태로 쓴다
+  const deb = {};
+  if (num("dotBurn")) deb["화상"] = num("dotBurn");
+  if (num("dotPoison")) deb["중독"] = num("dotPoison");
+  if (+$("dotBleed").value) deb["출혈"] = 99;
   let nrg = 1, combo = 0, total = 0, cds = {}, afterMeditate = false, last = null, hp = hp0, killTurn = 0;
+
+  const debAccOf = () => {
+    const a = EMPTY(); let hex = false;
+    for (const [n,v] of Object.entries(deb)){
+      if (!v) continue;
+      const D = DEBUFFS[n]; if (!D) continue;
+      if (D.mul) a.multi += D.mul;
+      if (D.self) a.multi += D.self;
+      if (D.aff !== undefined) a.affSet = D.aff;
+      if (D.hit && !hex){ a.finalMul *= D.hit; hex = true; }
+    }
+    return {a, hex};
+  };
+  const debText = () => Object.entries(deb).filter(([,v]) => v > 0)
+    .map(([n,v]) => n + (DEBUFFS[n] && DEBUFFS[n].stk ? "×" + v : v > 90 ? "" : "(" + v + ")")).join(" ");
+  const dotOf = () => {
+    const burn = (deb["화상"] || 0) * 0.7, ghost = (deb["유령 불꽃"] || 0) * 3.85;
+    const bleed = deb["출혈"] > 0 ? 3 : 0, poison = (deb["중독"] || 0) * 1;
+    return ((burn + ghost + bleed) / 100 * hp0 + poison) * dotScale;
+  };
+  const applyDeb = list => (list || []).forEach(([n,v]) => {
+    const D = DEBUFFS[n]; if (!D) return;
+    if (D.stk) deb[n] = (deb[n] || 0) + v; else deb[n] = Math.max(deb[n] || 0, v);
+  });
+  const tickDeb = () => { for (const n of Object.keys(deb)){
+    if (DEBUFFS[n] && !DEBUFFS[n].stk && deb[n] < 90) deb[n] = Math.max(0, deb[n] - 1);
+    if (!deb[n]) delete deb[n];
+  }};
 
   rows.forEach((row, i) => {
     const turn = i + 1;
@@ -1438,19 +1797,37 @@ function runSim(){
       else if (cds[sk.n] > 0){ bad = true; st = "⚠ 쿨타임 " + cds[sk.n] + "턴"; combo = 0; afterMeditate = false; }
       else {
         nrg -= sk.c; cds[sk.n] = sk.cd; combo++;
-        const M = mergeAcc(mergeAcc(mergeAcc(collectMods({turn, combo, afterMeditate}), P.acc), soulState({turn, afterMeditate}).acc), WA);
+        const DA = debAccOf();
+        const SH = shardState({hpPct: hp / hp0 * 100,
+                    debTgt: Object.values(deb).filter(v => v > 0).length});
+        const M = mergeAcc(mergeAcc(mergeAcc(mergeAcc(mergeAcc(collectMods({turn, combo, afterMeditate}), P.acc),
+                    soulState({turn, afterMeditate}).acc), WA), DA.a), SH);
         const sc = sk.s.length ? 1 + sk.s.reduce((a,[st2,d]) => a + (d > 0 ? SV(st2)/d : 0), 0) : scaleMul().mul;
-        const r = resolve(M, {base: sk.b, scale: sc});
+        let base = sk.b, extraNote = "";
+        if (sk.consumeDeb){                       // 코니수라
+          const types = Object.entries(deb).filter(([n,v]) => v > 0 && n !== "헥스").length;
+          const hexes = deb["헥스"] || 0;
+          base += types * 3 + hexes * 6;
+          extraNote = " · 디버프 " + types + "종" + (hexes ? "+헥스" + hexes : "") + " 흡수 → 기본 " + base;
+        }
+        const r = resolve(M, {base, scale: sc});
         const k = critParts(M);
         dmg = (r.afterDR * k.expected + r.trueDmg) * sk.h;
-        st = "NRG " + nrg + " · " + sk.h + "타" + (combo > 1 ? " · 연속 " + combo : "");
+        st = "NRG " + nrg + " · " + sk.h + "타" + (combo > 1 ? " · 연속 " + combo : "") + extraNote;
+        if (DA.hex && deb["헥스"]) deb["헥스"]--;
+        if (sk.consumeDeb) for (const n of Object.keys(deb)) delete deb[n];
+        else applyDeb((SKILL_EXTRA[sk.n] || {}).deb);
         last = {turn, sk, M, r, k, dmg};
         afterMeditate = false;
       }
     }
-    const extra = dot + P.allyDmg;
+    const dnow = dotOf();
+    const extra = dnow + P.allyDmg;
     const turnTotal = dmg + extra;
     if (extra > 0) st += (st ? " · " : "") + "도트·파티 +" + fmt(extra);
+    const dtx = debText();
+    if (dtx) st += " · [" + dtx + "]";
+    tickDeb();
     hp -= turnTotal;
     if (hp <= 0 && !killTurn){ killTurn = turn; st += " · 처치"; }
     row.classList.toggle("bad", bad);
@@ -1475,7 +1852,7 @@ function calc(){
   refreshCache();
   const SO = soulState();
   const PA = partyAcc();
-  const M = mergeAcc(mergeAcc(mergeAcc(collectMods(null), PA.acc), SO.acc), weaponState().acc);
+  const M = mergeAcc(mergeAcc(mergeAcc(collectMods(null), PA.acc), SO.acc), mergeAcc(weaponState().acc, shardState(null)));
   const extra = SO.lines.map(([a,b]) => ["소울 · " + a, b])
     .concat(PA.lines.map(([a]) => ["파티 · " + a, ""]));
   if (extra.length) $("bd").insertAdjacentHTML("beforeend",
@@ -1511,6 +1888,8 @@ function calc(){
       : cc.toFixed(0) + "% 확률로 크리티컬 (×" + k.hi.toFixed(2) + ")") +
     (SV("LCK") >= 25 ? " · 행운 25 마일스톤 +10% 반영" : "");
 
+  $("statOut").innerHTML = "최종 스탯 &nbsp; " + Object.keys(STATS)
+    .map(k => STATS[k] + " <b style='color:var(--gold)'>" + (+SV(k).toFixed(1)) + "</b>").join(" &nbsp;·&nbsp; ");
   runSim();
   renderCard(M, r, k, hits, expPerHit);
   tabDots();
@@ -1564,7 +1943,7 @@ function renderCard(M, r, k, hits, expPerHit){
   $("cardArt").innerHTML = slotHTML(a, 2);
 
   const chips = [];
-  rowsOf.concat(clsRows).forEach(x => {
+  rowsOf.concat(clsRows, spRows).forEach(x => {
     if (x.tile) return;
     const cb = x.el.querySelector("input[type=checkbox]");
     if (!cb || !cb.checked) return;
@@ -1573,6 +1952,14 @@ function renderCard(M, r, k, hits, expPerHit){
       (stk && +stk.value > 1 ? " ×" + stk.value : ""));
   });
   const wn = $("weap").value, an = $("armor").value;
+  const shl = [...document.querySelectorAll("#shardSlots .shType")]
+    .map((x,i) => x.value !== "— 비움 —" ? x.value + (document.querySelectorAll("#shardSlots .shGrade")[i].value === "r" ? " R" : " P") : null)
+    .filter(Boolean);
+  if (shl.length) chips.push("샤드 · <b>" + shl.join(", ") + "</b>");
+  const mk = markState();
+  Object.entries(mk.tiers).forEach(([n,t]) => { if (t) chips.push("마크 · <b>" + n + "</b> T" + t); });
+  if (mk.edo) chips.push("Edo · <b>" + mk.edo + "</b>");
+  if ($("permuthStat").value) chips.push("Permuth · <b>" + STATS[$("permuthStat").value] + " +40%</b>");
   if (wn !== "— 없음 —") chips.push("무기 · <b>" + wn + "</b>");
   if (an !== "— 없음 —") chips.push("갑옷 · <b>" + an + "</b>");
   soulEl.querySelectorAll(".mrow").forEach(row => {
@@ -1626,6 +2013,7 @@ function tabDots(){
   };
   const noParty = [...partyEl.querySelectorAll(".pbuff")].every(s => s.value === "0");
   dot("battle", noParty && !num("dotBurn") && !num("dotPoison") && $("dotBleed").value === "0");
+  dot("gear", document.querySelectorAll('#tiles_gear .tile[aria-pressed="true"]').length === 0);
   dot("soul", soulState().cost === 0 && masteryState().used <= 4);
   dot("sim", simRows.querySelectorAll(".simrow").length === 0);
   dot("solve", !$("solveOut").innerHTML.trim());
@@ -1657,7 +2045,7 @@ function statScale(stats){
   scalers.querySelectorAll(".scalerow").forEach(r => {
     const st = r.querySelector(".sStat").value;
     const d = parseFloat(r.querySelector(".sDiv").value) || 0;
-    if (d > 0) s += ((stats[st] + MBC[st] + CACHE.ar.flat[st]) * (1 + CACHE.ar.pct[st] / 100)) / d;
+    if (d > 0) s += ((CACHE.ch.base[st] + stats[st] + CACHE.gs[st] + MBC[st] + CACHE.ar.flat[st]) * (1 + (CACHE.ar.pct[st] + CACHE.mk.pct[st]) / 100)) / d;
   });
   return 1 + s;
 }
@@ -1685,7 +2073,7 @@ function dmgWith(acc0, stats){
   const dr = R >= 0 ? 100/(100+R) : Math.min(2, 2 - 100/(100+Math.abs(R)));
   const after = beforeDR * dr;
   const t = (num("trueFlat") + acc.trueFlat) * num("truedr") * (1 + num("trueMulti")/100);
-  const SL = (stats.LCK + MB().LCK + CACHE.ar.flat.LCK) * (1 + CACHE.ar.pct.LCK / 100);
+  const SL = (CACHE.ch.base.LCK + stats.LCK + CACHE.gs.LCK + MB().LCK + CACHE.ar.flat.LCK) * (1 + (CACHE.ar.pct.LCK + CACHE.mk.pct.LCK) / 100);
   const c = Math.max(0, SL * LCKM() + num("critAdd") + acc.crit) / 100;
   const n = Math.floor(c), f = c - n;
   const bonus = (SL >= 25 ? 1.10 : 1) + acc.critDmg / 100;
@@ -1729,7 +2117,7 @@ function candidates(){
 }
 
 function allocStats(acc, budget){
-  const s = {STR:7, ARC:7, END:7, SPD:7, LCK:7};
+  const s = {STR:0, ARC:0, END:0, SPD:0, LCK:0};   // 배분 포인트만 — 종족·레벨 기본치는 dmgWith 가 더한다
   let left = Math.max(0, Math.round(budget));
   const step = left > 60 ? 5 : 1;
   while (left > 0){
@@ -1927,7 +2315,7 @@ $("solve").addEventListener("click", solve);
 
 /* ── 클래스/스킬 선택 ── */
 $("cls").innerHTML = Object.keys(CLASSES).map(n => '<option value="'+n+'">'+n+'</option>').join("");
-function skillPool(){ return (CLASSES[$("cls").value] || {k:[]}).k.concat(subOf().k); }
+function skillPool(){ return (CLASSES[$("cls").value] || {k:[]}).k.concat(subOf().k, markSkills()); }
 function fillSkills(){
   $("skill").innerHTML = '<option value="">— 직접 입력 —</option>' +
     skillPool().map((s,i) => '<option value="'+i+'">'+s.n+'</option>').join("");
@@ -1937,11 +2325,12 @@ $("cls").addEventListener("change", () => { fillSkills(); renderClassPassives();
 $("sub").addEventListener("change", () => { fillSkills(); renderClassPassives(); refreshActions(); calc(); });
 $("skill").addEventListener("change", () => {
   const i = $("skill").value;
-  if (i === ""){ $("skillInfo").textContent = "베이스 클래스는 상위 슈퍼 클래스의 스킬을 그대로 따릅니다."; return; }
+  if (i === ""){ $("skillSp").innerHTML = ""; spRows = []; $("skillInfo").textContent = "베이스 클래스는 상위 슈퍼 클래스의 스킬을 그대로 따릅니다."; return; }
   const s = skillPool()[+i];
   $("base").value = s.b; $("hits").value = s.h;
   scalers.innerHTML = "";
   if (s.s.length) s.s.forEach(([st,d]) => addScaler(st, d)); else addScaler("STR", 0);
+  renderSkillSp();
   $("skillInfo").textContent = s.n + " — " + s.c + " NRG · 쿨타임 " + s.cd + "턴 · " + s.e + " 속성" +
     (s.s.length ? " · 계수 " + s.s.map(([st,d]) => STATS[st] + "/" + (d || "?")).join(" + ") : "") +
     (s.x ? "  |  " + s.x : "");
