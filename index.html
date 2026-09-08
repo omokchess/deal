@@ -213,8 +213,10 @@
   details.ref fieldset{margin-top:0}
 
   /* ── 마스터리 트리 ── */
-  .mtree{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 10px;
-    justify-items:center;padding:6px 0 2px;position:relative}
+  .mtree{padding:8px 0 2px;text-align:center;overflow:auto;background:
+    radial-gradient(circle at 50% 30%, rgba(150,32,111,.07), transparent 60%);border-radius:5px}
+  .mtree svg .mhit{cursor:pointer}
+  .mtree svg .mhit:hover{fill:rgba(255,255,255,.06)}
   .mtree .row{display:contents}
   .mnode{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);
     background:var(--panel-2);color:var(--ink-faint);cursor:pointer;position:relative;
@@ -1623,12 +1625,81 @@ const MAST_NODES = {
 "헥서 (중립·지팡이)":   {start:"END", L:"SPD", M:"ARC", R:"LCK"},
 "네크로맨서 (악·지팡이)":{start:"LCK", L:"SPD", M:"ARC", R:"END"}
 };
-/* 마스터리 트리 — 트렐로가 노드 수(일반 26 / 돌파 5 / 돌파 능력 3 / 강화 돌파 3)만 적어둬서
-   위치는 실제 트리 모양에 맞춰 근사했다. 일반 1p, 돌파 능력·강화 돌파 각 5p, 자물쇠는 돌파 포인트. */
-const MTREE = {start:4, B:{L:{n1:4, n2:3}, M:{n1:4, n2:3}, R:{n1:5, n2:3}}};
+/* ══════════ 마스터리 트리 ══════════
+   실제 게임 트리 모양을 그대로 옮겼다. 줄기 4노드 → 세 갈래로 갈라지고,
+   각 갈래는 다이아몬드로 벌어졌다 모이며 돌파 자물쇠를 지나 능력 노드로 끝난다.
+   개수는 트렐로 기준 (일반 26 / 돌파 5 / 돌파 능력 3 / 강화 돌파 3).            */
 const MPOINTS = 35;
-let MST = {L:{n1:0, ab:false, n2:0, en:false}, M:{n1:0, ab:false, n2:0, en:false},
-           R:{n1:0, ab:false, n2:0, en:false}, start:true};
+const STAT_COLOR = {STR:"#7EC8E3", ARC:"#B39DDB", END:"#F2A0B8", SPD:"#E8D06A", LCK:"#8FD694"};
+
+/* 노드: id, 갈래(S/L/M/R), 종류(n 일반 / lock 돌파 / ab 돌파 능력 / en 강화 돌파),
+   좌표, 부모, 가중치(아래로 갈수록 스탯 제공량이 늘어난다)                       */
+const MNODES = (() => {
+  const N = [];
+  const add = (id, br, type, x, y, p, w) => N.push({id, br, type, x, y, p: p || [], w: w || 1});
+  // 줄기 (시작 스탯 4개)
+  add("s1","S","n",280,38,[]);   add("s2","S","n",298,96,["s1"]);
+  add("s3","S","n",262,154,["s2"]); add("s4","S","n",280,212,["s3"]);
+  // 갈래별 좌표 템플릿 — dir: -1 왼쪽, 0 가운데, 1 오른쪽
+  const branch = (br, dir) => {
+    const cx = 280 + dir * 160;
+    const s = dir === 0 ? 1 : dir;      // 다이아몬드가 벌어지는 방향
+    add(br+"1", br, "n", 280 + dir * 95, 272, ["s4"]);
+    add(br+"2", br, "n", cx, 332, [br+"1"]);
+    add(br+"3a", br, "n", cx - 38, 394, [br+"2"]);
+    add(br+"3b", br, "n", cx + 38, 394, [br+"2"]);
+    add(br+"4",  br, "n", cx, 456, [br+"3a", br+"3b"]);
+    add("lk"+br+"1", br, "lock", cx + (dir === 0 ? 0 : -s * 62), dir === 0 ? 514 : 456, [br+"4"]);
+    add(br+"ab", br, "ab", cx, dir === 0 ? 576 : 522, ["lk"+br+"1"], 0);
+    if (dir === 0){
+      add("M5", "M", "n", cx - 40, 646, ["Mab"], 1.5);
+      add("M6", "M", "n", cx + 40, 646, ["Mab"], 1.5);
+      add("M7", "M", "n", cx, 708, ["M5","M6"], 1.5);
+      add("Men","M","en", cx, 776, ["M7"], 0);
+    } else {
+      add(br+"5", br, "n", cx, 588, [br+"ab"], 1.5);
+      add(br+"6", br, "n", cx - s * 30, 652, [br+"5"], 1.5);
+      add("lk"+br+"2", br, "lock", cx - s * 30, 712, [br+"6"]);
+      add(br+"en", br, "en", cx - s * 30, 780, ["lk"+br+"2"], 0);
+    }
+  };
+  branch("L", -1); branch("M", 0); branch("R", 1);
+  return N;
+})();
+const MMAP = Object.fromEntries(MNODES.map(n => [n.id, n]));
+const MCOST = t => t === "n" ? 1 : t === "lock" ? 0 : 5;
+let MST = new Set(["s1","s2","s3","s4"]);          // 줄기는 기본 확보
+
+function mUsed(set){ let c = 0; (set || MST).forEach(id => c += MCOST(MMAP[id].type)); return c; }
+function mPathTo(id){                               // 루트까지 가장 싼 경로
+  const node = MMAP[id];
+  if (!node.p.length) return [id];
+  let best = null;
+  node.p.forEach(pid => {
+    const path = mPathTo(pid);
+    const cost = path.filter(x => !MST.has(x)).reduce((a,x) => a + MCOST(MMAP[x].type), 0);
+    if (!best || cost < best.c) best = {path, c: cost};
+  });
+  return best.path.concat([id]);
+}
+function mPrune(){                                  // 루트에서 끊긴 노드 정리
+  const ok = new Set();
+  let changed = true;
+  MNODES.forEach(n => { if (!n.p.length && MST.has(n.id)) ok.add(n.id); });
+  while (changed){
+    changed = false;
+    MNODES.forEach(n => {
+      if (MST.has(n.id) && !ok.has(n.id) && n.p.some(p => ok.has(p))){ ok.add(n.id); changed = true; }
+    });
+  }
+  MST = new Set([...MST].filter(id => ok.has(id)));
+}
+function mToggle(id){
+  if (MST.has(id)){ MST.delete(id); mPrune(); }
+  else mPathTo(id).forEach(x => MST.add(x));
+  renderMastery(); calc();
+}
+const brNote = br => MST.has(br+"en") ? "2" : MST.has(br+"ab") ? "1" : "0";
 
 $("mastery").innerHTML =
   '<div class="grid c3">' +
@@ -1639,96 +1710,95 @@ $("mastery").innerHTML =
   '<div class="mhead" id="mHead"></div>' +
   '<div class="mtree" id="mTree"></div>' +
   '<div class="mlegend">' +
-    '<span><i>●</i> 일반 노드 1p</span><span><i>🔒</i> 돌파 (돌파 포인트)</span>' +
+    '<span><i>◉</i> 일반 노드 1p</span><span><i>✧</i> 돌파 (돌파 포인트)</span>' +
     '<span><i>◆</i> 돌파 능력 5p</span><span><i>◈</i> 강화 돌파 5p</span>' +
-    '<span>클릭하면 위쪽 경로까지 함께 찍힙니다</span>' +
+    '<span>노드를 누르면 위쪽 경로까지 함께 찍힙니다 · 다시 누르면 아래가 함께 풀립니다</span>' +
   '</div>' +
   '<div class="mrow" style="grid-template-columns:1fr auto;margin-top:8px">' +
     '<span class="nm" id="mOut">—</span><span class="eff" id="mUse">0/35</span></div>';
 
-const BR = ["L","M","R"];
-function mCost(st){
-  let c = st.start ? MTREE.start : 0;
-  BR.forEach(k => { c += st[k].n1 + st[k].n2 + (st[k].ab ? 5 : 0) + (st[k].en ? 5 : 0); });
-  return c;
-}
-function mSetPath(br, kind, idx){
-  const b = MST[br];
-  if (kind === "n1"){ b.n1 = b.n1 === idx ? idx - 1 : idx; if (b.n1 < MTREE.B[br].n1){ b.ab = false; b.n2 = 0; b.en = false; } }
-  if (kind === "ab"){ if (b.ab){ b.ab = false; b.n2 = 0; b.en = false; } else { b.n1 = MTREE.B[br].n1; b.ab = true; } }
-  if (kind === "n2"){ if (b.n2 >= idx){ b.n2 = idx - 1; b.en = false; } else { b.n1 = MTREE.B[br].n1; b.ab = true; b.n2 = idx; } }
-  if (kind === "en"){ if (b.en) b.en = false;
-    else { b.n1 = MTREE.B[br].n1; b.ab = true; b.n2 = MTREE.B[br].n2; b.en = true; } }
-  renderMastery(); calc();
-}
 function renderMastery(){
   const nd = MAST_NODES[$("cls").value];
-  const tree = $("mTree"); tree.innerHTML = "";
+  const host = $("mTree");
   $("mStart").value = nd ? STATS[nd.start] + " 노드 4개" : "클래스를 먼저 고르세요";
-  $("mHead").innerHTML = BR.map(k => '<div>' + ({L:"왼쪽",M:"가운데",R:"오른쪽"})[k] +
-    '<b>' + (nd ? STATS[nd[k]] : "—") + '</b></div>').join("");
-  if (!nd){ $("mOut").textContent = "—"; return; }
+  $("mHead").innerHTML = ["L","M","R"].map(k => '<div>' + ({L:"왼쪽",M:"가운데",R:"오른쪽"})[k] +
+    '<b style="color:' + (nd ? STAT_COLOR[nd[k]] : "var(--ink)") + '">' + (nd ? STATS[nd[k]] : "—") + '</b></div>').join("");
+  if (!nd){ host.innerHTML = ""; return; }
+  const colOf = br => br === "S" ? STAT_COLOR[nd.start] : STAT_COLOR[nd[br]];
 
-  const cell = (cls, label, title, on, fn, first) => {
-    const b = document.createElement("button");
-    b.type = "button";
-    b.className = "mnode " + cls + (on ? " on" : "") + (first ? " first" : "");
-    b.title = title;
-    b.innerHTML = cls.includes("abil") || cls.includes("enh") ? '<span>' + label + '</span>' : label;
-    if (fn) b.addEventListener("click", fn); else b.style.cursor = "default";
-    return b;
+  const edges = MNODES.flatMap(n => n.p.map(pid => {
+    const a = MMAP[pid], on = MST.has(n.id) && MST.has(pid);
+    return '<line x1="' + a.x + '" y1="' + a.y + '" x2="' + n.x + '" y2="' + n.y + '" ' +
+      'stroke="' + (on ? "var(--corrupt)" : "var(--line)") + '" stroke-width="' + (on ? 4 : 2) + '"/>';
+  })).join("");
+
+  const shape = n => {
+    const on = MST.has(n.id), c = colOf(n.br);
+    const dim = on ? 1 : .35;
+    if (n.type === "n")
+      return '<path d="M' + (n.x-17) + ' ' + n.y + ' Q' + n.x + ' ' + (n.y-13) + ' ' + (n.x+17) + ' ' + n.y +
+             ' Q' + n.x + ' ' + (n.y+13) + ' ' + (n.x-17) + ' ' + n.y + ' Z" fill="#12101a" stroke="' + c +
+             '" stroke-width="2" opacity="' + dim + '"/>' +
+             '<rect x="' + (n.x-4) + '" y="' + (n.y-4) + '" width="8" height="8" fill="' + c + '" opacity="' + dim + '"/>';
+    if (n.type === "lock")
+      return '<path d="M' + n.x + ' ' + (n.y-15) + ' L' + (n.x+9) + ' ' + (n.y-6) + ' L' + (n.x+18) + ' ' + n.y +
+             ' L' + (n.x+9) + ' ' + (n.y+6) + ' L' + n.x + ' ' + (n.y+15) + ' L' + (n.x-9) + ' ' + (n.y+6) +
+             ' L' + (n.x-18) + ' ' + n.y + ' L' + (n.x-9) + ' ' + (n.y-6) + ' Z" fill="#1a1024" stroke="var(--corrupt)" ' +
+             'stroke-width="2" opacity="' + (on ? 1 : .45) + '"/>';
+    const r = n.type === "en" ? 22 : 16;
+    return '<g opacity="' + (on ? 1 : .4) + '">' +
+      '<path d="M' + n.x + ' ' + (n.y-r) + ' L' + (n.x+r) + ' ' + n.y + ' L' + n.x + ' ' + (n.y+r) +
+      ' L' + (n.x-r) + ' ' + n.y + ' Z" fill="#1a1024" stroke="var(--corrupt)" stroke-width="2.5"/>' +
+      '<path d="M' + n.x + ' ' + (n.y-r*0.55) + ' L' + (n.x+r*0.55) + ' ' + n.y + ' L' + n.x + ' ' + (n.y+r*0.55) +
+      ' L' + (n.x-r*0.55) + ' ' + n.y + ' Z" fill="var(--corrupt)"/>' +
+      (n.type === "en" ? '<circle cx="' + n.x + '" cy="' + n.y + '" r="' + (r+7) + '" fill="none" ' +
+        'stroke="var(--corrupt)" stroke-width="1" stroke-dasharray="3 4"/>' : "") + '</g>';
   };
-  // 시작 노드 4개 (공용)
-  for (let i = 0; i < MTREE.start; i++)
-    tree.appendChild(Object.assign(cell("span3", "●", "시작 " + STATS[nd.start] + " 노드", MST.start, null, i === 0)));
-  tree.appendChild(cell("span3 lock", "🔒", "돌파 — 아래 단계를 여는 자물쇠", true, null));
-  // 갈래별 일반 n1
-  const maxN1 = Math.max(...BR.map(k => MTREE.B[k].n1));
-  for (let i = 1; i <= maxN1; i++) BR.forEach(k => {
-    if (i > MTREE.B[k].n1){ tree.appendChild(document.createElement("span")); return; }
-    tree.appendChild(cell("", "●", STATS[nd[k]] + " 노드 " + i, MST[k].n1 >= i, () => mSetPath(k, "n1", i)));
-  });
-  BR.forEach(k => tree.appendChild(cell("lock", "🔒", "갈래 돌파", MST[k].ab, null)));
-  BR.forEach(k => tree.appendChild(cell("abil", "◆", "돌파 능력 (5p)", MST[k].ab, () => mSetPath(k, "ab"))));
-  tree.appendChild(cell("span3 lock", "🔒", "돌파 — 강화 단계", BR.some(k => MST[k].en), null));
-  const maxN2 = Math.max(...BR.map(k => MTREE.B[k].n2));
-  for (let i = 1; i <= maxN2; i++) BR.forEach(k => {
-    if (i > MTREE.B[k].n2){ tree.appendChild(document.createElement("span")); return; }
-    tree.appendChild(cell("", "●", STATS[nd[k]] + " 하단 노드 " + i, MST[k].n2 >= i, () => mSetPath(k, "n2", i)));
-  });
-  BR.forEach(k => tree.appendChild(cell("enh", "◈", "강화 돌파 능력 (5p)", MST[k].en, () => mSetPath(k, "en"))));
 
-  $("mNote").value = BR.map(k => MST[k].en ? "2" : MST[k].ab ? "1" : "0").join("");
+  const hit = MNODES.filter(n => n.type !== "lock").map(n =>
+    '<circle class="mhit" data-id="' + n.id + '" cx="' + n.x + '" cy="' + n.y + '" r="19" fill="transparent">' +
+    '<title>' + (n.br === "S" ? STATS[nd.start] + " 시작 노드" :
+      n.type === "ab" ? "돌파 능력 (5p)" : n.type === "en" ? "강화 돌파 능력 (5p)" :
+      STATS[nd[n.br]] + " 노드 (1p)") + '</title></circle>').join("");
+
+  host.innerHTML = '<svg viewBox="0 0 560 810" width="100%" style="max-height:640px">' +
+    edges + MNODES.map(shape).join("") + hit + '</svg>';
+  host.querySelectorAll(".mhit").forEach(c =>
+    c.addEventListener("click", () => mToggle(c.dataset.id)));
+  $("mNote").value = ["L","M","R"].map(brNote).join("");
 }
+
 function masteryState(){
   const nd = MAST_NODES[$("cls").value];
   const bonus = {STR:0, ARC:0, END:0, SPD:0, LCK:0};
   if (!nd){ $("mOut").textContent = "—"; $("mUse").textContent = "0/" + MPOINTS; return {bonus, used:0}; }
   const per = num("mPer");
-  if (MST.start) bonus[nd.start] += MTREE.start * per;
-  BR.forEach(k => {
-    // 아래로 내려갈수록 제공량이 늘어난다 — 하단 노드는 1.5배로 잡았다
-    bonus[nd[k]] += MST[k].n1 * per + MST[k].n2 * per * 1.5;
+  MST.forEach(id => {
+    const n = MMAP[id];
+    if (n.type !== "n") return;
+    bonus[n.br === "S" ? nd.start : nd[n.br]] += per * n.w;
   });
-  const used = mCost(MST);
+  const used = mUsed();
   $("mUse").textContent = used + "/" + MPOINTS;
   $("mUse").style.color = used > MPOINTS ? "var(--warn)" : "";
-  $("mOut").innerHTML = Object.entries(bonus).filter(([,v]) => v > 0)
-    .map(([k,v]) => STATS[k] + " +" + (+v.toFixed(1))).join(" · ") +
-    ' <span class="en">표기 ' + BR.map(k => MST[k].en ? "2" : MST[k].ab ? "1" : "0").join("") + '</span>';
+  $("mOut").innerHTML = (Object.entries(bonus).filter(([,v]) => v > 0)
+    .map(([k,v]) => '<b style="color:' + STAT_COLOR[k] + '">' + STATS[k] + " +" + (+v.toFixed(1)) + '</b>').join(" · ") || "—") +
+    ' <span class="en">표기 ' + ["L","M","R"].map(brNote).join("") + '</span>';
   return {bonus, used};
 }
-/* 표기(예: 210)로 한 번에 세팅 */
+
+/* 표기(210)로 한 번에 세팅 */
 function mFromNote(note){
   const v = String(note || "").replace(/[^0-2]/g, "").padEnd(3, "0").slice(0, 3);
-  BR.forEach((k, i) => {
+  MST = new Set(["s1","s2","s3","s4"]);
+  ["L","M","R"].forEach((br, i) => {
     const t = +v[i];
-    MST[k] = {n1: t >= 0 ? MTREE.B[k].n1 : 0, ab: t >= 1, n2: t >= 2 ? MTREE.B[k].n2 : 0, en: t >= 2};
-    if (t === 0) MST[k] = {n1: MTREE.B[k].n1, ab:false, n2:0, en:false};
+    const target = t >= 2 ? br + "en" : t >= 1 ? br + "ab" : br + "4";
+    mPathTo(target).forEach(x => MST.add(x));
   });
-  renderMastery();
+  renderMastery(); masteryState();
 }
-$("mNote").addEventListener("change", () => { mFromNote($("mNote").value); calc(); });
+
 
 // 스탯 최종값 = 입력값 + 마스터리 보너스
 $("race").innerHTML = Object.keys(RACES).map(n => '<option value="'+n+'">'+n+'</option>').join("");
@@ -2336,9 +2406,9 @@ function renderCard(M, r, k, hits, expPerHit){
   });
   const mst = MAST_NODES[$("cls").value];
   if (mst) ["L","M","R"].forEach(kk => {
-    const b = MST[kk], n = b.n1 + b.n2;
-    if (n || b.ab) chips.push("마스터리 · <b>" + STATS[mst[kk]] + "</b> " + n + "노드" +
-      (b.en ? " ◈" : b.ab ? " ◆" : ""));
+    const n = [...MST].filter(id => MMAP[id].br === kk && MMAP[id].type === "n").length;
+    if (n) chips.push("마스터리 · <b>" + STATS[mst[kk]] + "</b> " + n + "노드" +
+      (MST.has(kk+"en") ? " ◈" : MST.has(kk+"ab") ? " ◆" : ""));
   });
   partyEl.querySelectorAll(".mrow").forEach((row, i) => {
     const b = PARTY_BUFFS[+row.querySelector(".pbuff").value];
@@ -2762,35 +2832,49 @@ function armorStatOf(name){
   return {flat, pct, hp:a.hp || 0, hpPct:a.hpPct || 0, name};
 }
 
-/* 마스터리 35포인트 최적 배분 — 새 트리 구조 위에서 전수 탐색 */
+/* 마스터리 35포인트 최적 배분 — 갈래별 진행 단계를 전수 탐색 */
 function solveMastery(base, stats, cls){
   const nd = MAST_NODES[cls];
   if (!nd) return null;
-  const saved = CACHE.mb, per = num("mPer");
-  const opts = k => {
-    const o = [];
-    for (let n1 = 0; n1 <= MTREE.B[k].n1; n1++) o.push({n1, ab:false, n2:0, en:false});
-    for (let n2 = 0; n2 <= MTREE.B[k].n2; n2++) o.push({n1:MTREE.B[k].n1, ab:true, n2, en:false});
-    o.push({n1:MTREE.B[k].n1, ab:true, n2:MTREE.B[k].n2, en:true});
-    return o;
+  const saved = new Set(MST), savedMb = CACHE.mb;
+  // 각 갈래에서 도달 가능한 목표 노드들 (앞에서부터 순서대로)
+  const goals = br => [br+"1", br+"2", br+"3a", br+"3b", br+"4", br+"ab",
+                       br === "M" ? "M5" : br+"5", br === "M" ? "M6" : br+"6",
+                       br === "M" ? "M7" : null, br+"en"].filter(Boolean);
+  const stagesOf = br => {
+    const out = [{set:new Set(), cost:0, tag:0}];
+    const g = goals(br);
+    let acc = new Set();
+    g.forEach(id => {
+      mPathTo.__ = null;
+      const cur = new Set(acc);
+      // 루트 경로를 그대로 담는다 (MST 상태와 무관하게)
+      const walk = x => { if (cur.has(x)) return; const n = MMAP[x];
+        if (n.p.length) walk(n.p[0]); cur.add(x); };
+      walk(id);
+      acc = cur;
+      const set = new Set([...cur].filter(x => MMAP[x].br !== "S"));
+      let cost = 0; set.forEach(x => cost += MCOST(MMAP[x].type));
+      out.push({set, cost, tag: set.has(br+"en") ? 2 : set.has(br+"ab") ? 1 : 0});
+    });
+    return out;
   };
+  const L = stagesOf("L"), M = stagesOf("M"), R = stagesOf("R");
   let best = null;
-  const cost = (k,o) => o.n1 + o.n2 + (o.ab ? 5 : 0) + (o.en ? 5 : 0);
-  const L = opts("L"), M = opts("M"), R = opts("R");
   for (const a of L) for (const b of M) for (const c of R){
-    const used = MTREE.start + cost("L",a) + cost("M",b) + cost("R",c);
+    const used = 4 + a.cost + b.cost + c.cost;
     if (used > MPOINTS) continue;
-    const bonus = {STR:0,ARC:0,END:0,SPD:0,LCK:0};
-    bonus[nd.start] += MTREE.start * per;
-    bonus[nd.L] += a.n1 * per + a.n2 * per * 1.5;
-    bonus[nd.M] += b.n1 * per + b.n2 * per * 1.5;
-    bonus[nd.R] += c.n1 * per + c.n2 * per * 1.5;
+    const bonus = {STR:0, ARC:0, END:0, SPD:0, LCK:0};
+    const per = num("mPer");
+    bonus[nd.start] += 4 * per;
+    [[a,"L"],[b,"M"],[c,"R"]].forEach(([o, br]) =>
+      o.set.forEach(id => { const n = MMAP[id]; if (n.type === "n") bonus[nd[br]] += per * n.w; }));
     CACHE.mb = bonus;
     const d = dmgWith(base, stats);
-    if (!best || d > best.d) best = {d, plan:{L:a, M:b, R:c}, used, bonus,
-      note:[a,b,c].map(x => x.en ? "2" : x.ab ? "1" : "0").join("")};
+    if (!best || d > best.d) best = {d, used, bonus, note:"" + a.tag + b.tag + c.tag,
+      sets:{L:a.set, M:b.set, R:c.set}, counts:{L:a.set.size, M:b.set.size, R:c.set.size}};
   }
-  CACHE.mb = best ? best.bonus : saved;
+  MST = saved; CACHE.mb = best ? best.bonus : savedMb;
   return best;
 }
 
@@ -2986,8 +3070,7 @@ function render(chosen, contrib, nextUp, stats, dmg, goal, baseline, trimmed, sl
       (mastPlan ? '<h4 style="margin-top:12px">마스터리 ' + mastPlan.used + '/35 · 표기 ' + mastPlan.note + '</h4><ul>' +
         li("시작 노드", STATS[MAST_NODES[$("cls").value].start] + " ×4") +
         ["L","M","R"].map(k => li(({L:"왼쪽",M:"가운데",R:"오른쪽"})[k] + " · " + STATS[MAST_NODES[$("cls").value][k]],
-          mastPlan.plan[k].n1 + (mastPlan.plan[k].ab ? " +◆" : "") +
-          (mastPlan.plan[k].n2 ? " +" + mastPlan.plan[k].n2 : "") + (mastPlan.plan[k].en ? " +◈" : ""))).join("") +
+          mastPlan.counts[k] + "노드" + (mastPlan.sets[k].has(k+"en") ? " ◈" : mastPlan.sets[k].has(k+"ab") ? " ◆" : ""))).join("") +
         '</ul>' : "") +
       (soulPick && soulPick.picked.length ?
         '<h4 style="margin-top:12px">소울 트리 (' + soulPick.spent + 'p)</h4><ul>' +
@@ -3017,7 +3100,11 @@ function applyBuild(chosen, stats, slots, soulPick, gearSet, mastPlan){
       document.querySelectorAll("#shardSlots .shGrade")[i].value = gearSet.sp.grade;
     });
   }
-  if (mastPlan){ MST = {start:true, L:mastPlan.plan.L, M:mastPlan.plan.M, R:mastPlan.plan.R}; renderMastery(); }
+  if (mastPlan){
+    MST = new Set(["s1","s2","s3","s4"]);
+    ["L","M","R"].forEach(k => mastPlan.sets[k].forEach(id => MST.add(id)));
+    renderMastery();
+  }
   partyEl.querySelectorAll(".pbuff").forEach(sel => sel.value = "0");
   chosen.filter(c => c.pb !== undefined).forEach((c,i) => {
     const sel = partyEl.querySelectorAll(".pbuff")[i];
@@ -3064,6 +3151,7 @@ function fillSkills(){
   }
 }
 $("sub").innerHTML = Object.keys(SUBCLASSES).map(n => '<option value="'+n+'">'+n+'</option>').join("");
+$("mNote").addEventListener("change", () => { mFromNote($("mNote").value); calc(); });
 $("cls").addEventListener("change", () => { fillSkills(); renderClassPassives(); refreshActions(); renderMastery(); calc(); });
 $("sub").addEventListener("change", () => { fillSkills(); renderClassPassives(); refreshActions(); calc(); });
 // 마크 티어를 올리면 그 티어의 스킬이 목록에 바로 붙어야 한다
