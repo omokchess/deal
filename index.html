@@ -109,6 +109,13 @@
     margin:0 0 5px;text-transform:uppercase}
   .mgroup > h3 em{font-style:normal;text-transform:none;letter-spacing:0;font-weight:400}
   .mgroup > h3{display:flex;align-items:center;gap:8px}
+  details.soulfold{border-top:1px solid var(--line);padding-top:8px}
+  details.soulfold > summary{list-style:none;cursor:pointer}
+  details.soulfold > summary::-webkit-details-marker{display:none}
+  details.soulfold > summary h3{margin-bottom:0}
+  details.soulfold > summary h3::before{content:"▸ ";color:var(--gold);font-size:9px}
+  details.soulfold[open] > summary h3::before{content:"▾ "}
+  details.soulfold > summary h3{margin-bottom:6px}
   .bulkbar{display:flex;align-items:center;gap:9px;margin-bottom:12px;padding-bottom:10px;
     border-bottom:1px solid var(--line);font-size:11px;color:var(--ink-faint);
     letter-spacing:.06em;text-transform:uppercase}
@@ -327,8 +334,8 @@
   <fieldset>
     <legend>스킬 수치</legend>
     <div class="grid c3">
-      <label><span class="k">기본 피해량 <span class="en">Base</span></span><input type="number" id="base" value="3.5" step="0.1"></label>
-      <label><span class="k">타수 <span class="en">Hits</span></span><input type="number" id="hits" value="2" step="1" min="1"></label>
+      <label><span class="k">기본 피해량 <span class="en">Base</span></span><input type="number" id="base" value="5" step="0.1"></label>
+      <label><span class="k">타수 <span class="en">Hits</span></span><input type="number" id="hits" value="1" step="1" min="1"></label>
       <label><span class="k">속성 <span class="en">Element</span></span>
         <select id="elem">
           <option value="1">보통 (×1.00)</option>
@@ -361,13 +368,37 @@
   </fieldset>
 
   <fieldset>
+    <legend>커럽션 · 커럽트 파워</legend>
+    <div class="grid c3">
+      <label><span class="k">커럽션</span>
+        <select id="corr">
+          <option value="">— 없음 —</option>
+          <option value="blas">블라스페미 (노치)</option>
+          <option value="her">헤레시</option>
+          <option value="tyr">타이래니</option>
+        </select></label>
+      <label><span class="k">보유 커럽트 파워</span><input type="number" id="cpHave" value="0" min="0" step="5"></label>
+      <label><span class="k">노치 소모 스킬 <span class="en">코스트 3+</span></span>
+        <select id="notchUse">
+          <option value="auto">스킬 코스트로 자동 판정</option>
+          <option value="on">이 공격은 노치를 소모함</option>
+          <option value="off">노치를 소모하지 않음</option>
+        </select></label>
+    </div>
+    <div class="mrow" style="grid-template-columns:1fr auto;margin-top:8px">
+      <span class="nm" id="cpOut">—</span><span class="eff" id="cpNeed">—</span></div>
+    <p class="hint">블라스페미에서 <b>코스트 3 이상</b> 스킬은 노치 스택을 전부 소모하므로 그 공격에는 커럽트 파워를 쓸 수 없습니다.
+      커럽트 파워를 쓰는 기어가 <b>다단히트</b> 스킬에 붙으면 <b>타수마다</b> 소모되므로, 필요 CP = 옵션 합계 × 타수입니다.</p>
+  </fieldset>
+
+  <fieldset>
     <legend>스탯 배분 <span class="cnt" id="allocCnt">0/150</span></legend>
     <div class="grid c5">
-      <label><span class="k">근력 <span class="en">배분</span></span><input type="number" id="STR" min="0" value="100"></label>
-      <label><span class="k">신비 <span class="en">배분</span></span><input type="number" id="ARC" min="0" value="7"></label>
-      <label><span class="k">체력 <span class="en">배분</span></span><input type="number" id="END" min="0" value="7"></label>
-      <label><span class="k">속도 <span class="en">배분</span></span><input type="number" id="SPD" min="0" value="7"></label>
-      <label><span class="k">행운 <span class="en">배분</span></span><input type="number" id="LCK" min="0" value="25"></label>
+      <label><span class="k">근력 <span class="en">배분</span></span><input type="number" id="STR" min="0" value="0"></label>
+      <label><span class="k">신비 <span class="en">배분</span></span><input type="number" id="ARC" min="0" value="0"></label>
+      <label><span class="k">체력 <span class="en">배분</span></span><input type="number" id="END" min="0" value="0"></label>
+      <label><span class="k">속도 <span class="en">배분</span></span><input type="number" id="SPD" min="0" value="0"></label>
+      <label><span class="k">행운 <span class="en">배분</span></span><input type="number" id="LCK" min="0" value="0"></label>
     </div>
     <div class="mrow" style="grid-template-columns:1fr;margin-top:8px">
       <span class="nm" id="statOut" style="font-family:'JetBrains Mono',monospace;font-size:11.5px">—</span></div>
@@ -1313,6 +1344,13 @@ const EMPTY = () => ({multi:0, flat:0, reduc:0, reducMul:1, trueFlat:0, crit:0, 
 
 function readRow(r, ctx){
   const it = r.item;
+  // 노치 소모 공격 / 커럽션 없음 / CP 부족이면 CP 옵션은 발동하지 않는다
+  if (it.opts && CACHE.cp){
+    const optSel0 = r.el.querySelector(".opt");
+    if (optSel0 && CP_COST(optSel0.selectedOptions[0].textContent) > 0 &&
+        (CACHE.cp.blocked || !CACHE.cp.corr || CACHE.cp.short))
+      return {on:false, f:{}, n:1, eff:"CP 사용 불가", optIdx:0};
+  }
   const cb = r.tile ? null : r.el.querySelector("input[type=checkbox]");
   let on = r.tile ? r.el.getAttribute("aria-pressed") === "true" : (cb && cb.checked);
   const optSel = r.el.querySelector(".opt"), tierSel = r.el.querySelector(".tier"), stk = r.el.querySelector(".stk");
@@ -1417,11 +1455,13 @@ const bulkHTML = scope =>
     '<button type="button" class="mini off" data-r="0">해제</button>' +
   '</span>';
 soulEl.insertAdjacentHTML("beforeend",
-  '<div class="bulkbar"><span>일괄 선택 · 전체</span>' + bulkHTML("all") + '</div>');
+  '<div class="bulkbar"><span>일괄 선택 · 펼쳐진 트리만</span>' + bulkHTML("all") + '</div>');
 SOUL.forEach(([branch, nodes], bi) => {
-  const box = document.createElement("div");
-  box.className = "mgroup";
-  box.innerHTML = '<h3>' + branch + ' <em class="btot"></em>' + bulkHTML(bi) + '</h3>';
+  const isDamage = bi === 0;                       // 공격 트리만 펼친 채로 둔다
+  const box = document.createElement(isDamage ? "div" : "details");
+  box.className = "mgroup" + (isDamage ? "" : " soulfold");
+  const head = '<h3>' + branch + ' <em class="btot"></em>' + bulkHTML(bi) + '</h3>';
+  box.innerHTML = isDamage ? head : '<summary>' + head + '</summary>';
   nodes.forEach((nd, ni) => {
     const row = document.createElement("div");
     row.className = "mrow off";
@@ -1440,9 +1480,13 @@ SOUL.forEach(([branch, nodes], bi) => {
 soulEl.addEventListener("click", e => {
   const b = e.target.closest(".bulk button");
   if (!b) return;
+  e.preventDefault();                              // summary 안의 버튼이 접기를 토글하지 않게
   const scope = b.closest(".bulk").dataset.scope, r = +b.dataset.r;
   const sel = scope === "all" ? '.mrow' : '.mrow[data-b="' + scope + '"]';
   soulEl.querySelectorAll(sel).forEach(row => {
+    // 전체 선택은 펼쳐 놓은 트리에만 적용된다
+    const fold = row.closest("details.soulfold");
+    if (scope === "all" && fold && !fold.open) return;
     const nd = SOUL[row.dataset.b][1][row.dataset.i];
     row.querySelector(".rank").value = String(Math.min(r, nd.r));
   });
@@ -1584,6 +1628,36 @@ function markSkills(){
   return out;
 }
 
+/* 커럽트 파워 — 노치 제한과 다단히트 소모 */
+const CP_COST = label => { const m = /CP\s*(\d+)/.exec(label || ""); return m ? +m[1] : 0; };
+function cpState(){
+  const corr = $("corr").value, have = num("cpHave");
+  const hits = Math.max(1, Math.round(num("hits")));
+  const i = $("skill").value;
+  const sk = i !== "" ? skillPool()[+i] : null;
+  const mode = $("notchUse").value;
+  const notch = corr === "blas" && (mode === "on" || (mode === "auto" && sk && sk.c >= 3));
+  // 지금 켜져 있는 CP 옵션들의 비용
+  let per = 0; const used = [];
+  document.querySelectorAll('#tiles_gear .tile[aria-pressed="true"]').forEach(el => {
+    const opt = el.querySelector(".opt");
+    if (!opt) return;
+    const c = CP_COST(opt.selectedOptions[0].textContent);
+    if (c){ per += c; used.push(el.querySelector(".tn").textContent + " " + c); }
+  });
+  const need = per * hits;
+  const blocked = notch && per > 0;
+  const short = !blocked && need > have;
+  $("cpOut").innerHTML = !corr ? "커럽션 없음 — 커럽트 파워 옵션을 쓸 수 없습니다."
+    : notch ? '<b style="color:var(--warn)">노치 소모 공격</b> — 이 공격에는 커럽트 파워를 쓸 수 없습니다.' +
+              (used.length ? " 켜둔 옵션(" + used.join(", ") + ")은 계산에서 제외됩니다." : "")
+    : used.length ? "CP 옵션 " + used.join(" · ") + " × " + hits + "타"
+    : "켜둔 커럽트 파워 옵션 없음";
+  $("cpNeed").textContent = used.length && !notch ? "필요 " + need + " / 보유 " + have : "—";
+  $("cpNeed").style.color = short ? "var(--warn)" : "";
+  return {corr, have, notch, per, need, blocked, short, hits};
+}
+
 /* 착용 기어의 고정 스탯 */
 function gearStatBonus(){
   const b = {STR:0,ARC:0,END:0,SPD:0,LCK:0}; const names = [];
@@ -1669,9 +1743,10 @@ function armorState(){
   return {flat, pct, hp:a.hp || 0, hpPct:a.hpPct || 0, name:$("armor").value};
 }
 
-let CACHE = {mk:{pct:{STR:0,ARC:0,END:0,SPD:0,LCK:0}, tiers:{}, edo:""}, ch:{base:{STR:0,ARC:0,END:0,SPD:0,LCK:0}, budget:150, used:0, lv:50}, gs:{STR:0,ARC:0,END:0,SPD:0,LCK:0}, soul:null, party:null, weapon:null, ar:{flat:{STR:0,ARC:0,END:0,SPD:0,LCK:0}, pct:{STR:0,ARC:0,END:0,SPD:0,LCK:0}}, mb:{STR:0,ARC:0,END:0,SPD:0,LCK:0}};
+let CACHE = {cp:null, mk:{pct:{STR:0,ARC:0,END:0,SPD:0,LCK:0}, tiers:{}, edo:""}, ch:{base:{STR:0,ARC:0,END:0,SPD:0,LCK:0}, budget:150, used:0, lv:50}, gs:{STR:0,ARC:0,END:0,SPD:0,LCK:0}, soul:null, party:null, weapon:null, ar:{flat:{STR:0,ARC:0,END:0,SPD:0,LCK:0}, pct:{STR:0,ARC:0,END:0,SPD:0,LCK:0}}, mb:{STR:0,ARC:0,END:0,SPD:0,LCK:0}};
 function refreshCache(){
   CACHE.mk = markState();
+  CACHE.cp = cpState();
   CACHE.ch = charState();
   CACHE.gs = gearStatBonus();
   CACHE.mb = masteryState().bonus;
@@ -2181,9 +2256,10 @@ function candidates(){
       }
       const push = (f, label, optIdx) => {
         if (!f || !Object.keys(f).length) return;
-        if (!useCP && /CP /.test(label)) return;
+        const cpc = CP_COST(label);
+        if (cpc && (!useCP || !CACHE.cp || CACHE.cp.blocked || !CACHE.cp.corr)) return;
         out.push({kind, gid:grp.g+ii, label:it.n + (optIdx !== undefined ? " · " + it.opts[optIdx][0] : ""),
-                  f, n: it.max || 1, item:it, optIdx});
+                  f, n: it.max || 1, item:it, optIdx, cp: cpc});
       };
       if (it.opts) it.opts.forEach((o,k) => push(o[1], o[0], k));
       else push(it.f, "");
@@ -2217,18 +2293,25 @@ function allocStats(acc, budget){
 
 function greedyPick(stats, pool, caps){
   const chosen = [], used = {gear:0, art:0, trait:0, cond:0}, seen = new Set();
+  const hits = Math.max(1, Math.round(num("hits")));
+  const cpHave = CACHE.cp ? CACHE.cp.have : 0;
+  let cpSpent = 0;
   let cur = dmgWith(accOf(chosen), stats);
   for(;;){
     let best = null, bestD = cur;
     pool.forEach(c => {
       if (seen.has(c.gid)) return;
       if (used[c.kind] >= caps[c.kind]) return;
+      // 커럽트 파워는 타수마다 빠져나간다 — 예산을 넘으면 후보에서 뺀다
+      if (c.cp && cpSpent + c.cp * hits > cpHave) return;
       const d = dmgWith(accOf(chosen.concat([c])), stats);
       if (d > bestD + 1e-9){ bestD = d; best = c; }
     });
     if (!best) break;
     chosen.push(best); seen.add(best.gid); used[best.kind]++; cur = bestD;
+    if (best.cp) cpSpent += best.cp * hits;
   }
+  chosen.cpSpent = cpSpent;
   return chosen;
 }
 
@@ -2302,6 +2385,7 @@ function solve(){
     .map(c => ({c, d: dmgWith(accOf(chosen.concat([c])), stats) - dmg}))
     .sort((a,b) => b.d - a.d).slice(0,3).filter(x => x.d > 0.01);
 
+  window.__cpSpent = chosen.reduce((a,c) => a + (c.cp || 0) * Math.max(1, Math.round(num("hits"))), 0);
   render(chosen, contrib, nextUp, stats, dmg, goal, baseline, trimmed, slots, soulPick);
   window.__build = {chosen, stats, soulPick};
 }
@@ -2316,7 +2400,8 @@ function render(chosen, contrib, nextUp, stats, dmg, goal, baseline, trimmed, sl
   const plan = [];
   const skName = $("skill").value !== "" ? skillPool()[+$("skill").value] : null;
   const has = re => chosen.some(c => re.test(c.label));
-  if (has(/CP /)) plan.push("커럽션 폼에 진입해 커럽트 파워를 먼저 쌓는다 — 소모형 기어는 턴당 한 번만 발동한다.");
+  if (has(/CP /)) plan.push("커럽션 폼에 진입해 커럽트 파워를 먼저 쌓는다 — 다단히트 스킬이면 타수마다 빠져나가므로 " +
+    "필요량 = 옵션 합계 × 타수. 블라스페미에서 코스트 3 이상 스킬은 노치를 소모해 커럽트 파워를 쓸 수 없다.");
   if (has(/Fleet/)) plan.push("1턴차에 메인 스킬을 넣는다 (Fleet은 전투 첫 턴에만 붙는다).");
   if (has(/Momentum/)) plan.push("공격을 끊지 않는다 — 연속 공격 3턴째에 Momentum이 최대가 된다.");
   if (has(/포커스드 마인드|명상/)) plan.push("메인 스킬 직전 턴에 명상한다 (받는 피해 +15%는 감수).");
@@ -2336,6 +2421,9 @@ function render(chosen, contrib, nextUp, stats, dmg, goal, baseline, trimmed, sl
         '<span style="font-size:11.5px;color:var(--ink-faint)">목표 ' + fmt(goal) +
           ' · 맨몸 ' + fmt(baseline) + ' → ×' + (dmg/Math.max(baseline,.001)).toFixed(2) + '</span></div>' +
 
+      (window.__cpSpent ? '<h4>커럽트 파워</h4><ul>' +
+        li("소요 (타수 " + Math.max(1, Math.round(num("hits"))) + "회 곱)", window.__cpSpent + " / 보유 " + (CACHE.cp ? CACHE.cp.have : 0)) +
+        '</ul>' : "") +
       '<h4>스탯 배분</h4><ul>' +
         Object.entries(stats).map(([k,v]) => li(STATS[k], v + (v >= 110 ? "  (110 마일스톤)" : v >= 60 ? "  (60)" : v >= 25 ? "  (25)" : ""))).join("") +
       '</ul>' +
