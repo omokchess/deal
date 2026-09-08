@@ -521,6 +521,13 @@
       <label><span class="k">내 상태이상 수 <span class="en">리버싱 샤드</span></span>
         <input type="number" id="selfDeb" value="0" min="0" step="1"></label>
     </div>
+    <div class="grid c3" style="margin-top:12px">
+      <label><span class="k">내 최대 체력 <span class="en">0 = 자동</span></span><input type="number" id="myHP" value="0" min="0" step="5"></label>
+      <label><span class="k">턴당 받는 피해 <span class="en">적 공격</span></span><input type="number" id="incDmg" value="0" min="0" step="1"></label>
+      <label><span class="k">포션 회복량</span><input type="number" id="potHeal" value="25" min="0" step="5"></label>
+    </div>
+    <p class="hint">내 최대 체력을 0으로 두면 <code>100 + 체력 스탯 + 갑옷 보너스</code>로 잡습니다.
+      방어(가드)는 그 턴 받는 피해를 <code>50% + 근력의 10%</code>만큼 줄입니다.</p>
     <p class="hint">도트는 대상 최대 체력 기준으로 턴마다 자동 적용됩니다. 화상 0.7%/스택, 유령 불꽃 3.85%, 출혈 3%, 중독 스택당 1.
       보스는 이 값의 10%만 받습니다.</p>
   </fieldset>
@@ -559,11 +566,22 @@
     <div class="grid c3" style="margin-top:11px">
       <label style="flex-direction:row;align-items:center;gap:7px"><input type="checkbox" id="useCond" checked style="width:15px;accent-color:var(--gold)"><span>조건부 버프도 사용</span></label>
       <label style="flex-direction:row;align-items:center;gap:7px"><input type="checkbox" id="useCP" checked style="width:15px;accent-color:var(--gold)"><span>커럽트 파워 소모 허용</span></label>
+      <label><span class="k">현실성</span>
+        <select id="realism">
+          <option value="real">현실 빌드 · 조건 3개까지, 스택은 절반</option>
+          <option value="max">이론상 최대 · 전부 최대치</option>
+        </select></label>
+    </div>
+    <div class="grid c3" style="margin-top:11px">
+      <label style="flex-direction:row;align-items:center;gap:7px"><input type="checkbox" id="optGearSet" checked style="width:15px;accent-color:var(--gold)"><span>무기·갑옷·샤드도 탐색</span></label>
+      <label style="flex-direction:row;align-items:center;gap:7px"><input type="checkbox" id="optMast" checked style="width:15px;accent-color:var(--gold)"><span>마스터리 배분도 탐색</span></label>
       <button type="button" class="btn pri" id="solve">빌드 계산</button>
     </div>
     <div id="solveOut"></div>
-    <p class="hint">지금 고른 스킬과 대상 방어 수치를 기준으로, 스탯 배분 → 기어 4칸 → 특성 슬롯 → 조건부 버프 순서로 탐색해
-      목표치에 닿는 최소 구성을 찾습니다. 켜져 있는 항목은 무시하고 처음부터 다시 짭니다.</p>
+    <p class="hint">지금 고른 스킬과 대상 방어 수치를 기준으로 <b>스탯 배분 · 기어 4칸 · 유물 2칸 · 특성 슬롯 · 조건부 버프 ·
+      파티 지원 3명 · 무기 · 갑옷 · 샤드 · 마스터리 35p · 소울 트리</b>를 함께 탐색합니다. 켜져 있는 항목은 무시하고 처음부터 다시 짭니다.<br>
+      <b>현실 빌드</b>는 동시에 만족시켜야 하는 조건부 버프를 3개로 제한하고, 스택형 효과는 최대치의 절반만 가정하며,
+      유지하기 어려운 샤드(익스큐팅·리버싱)는 빼고 계산합니다. <b>이론상 최대</b>는 전부 최대치로 잡습니다.</p>
   </fieldset>
 </div>
 </main>
@@ -1348,7 +1366,7 @@ function readRow(r, ctx){
   if (it.opts && CACHE.cp){
     const optSel0 = r.el.querySelector(".opt");
     if (optSel0 && CP_COST(optSel0.selectedOptions[0].textContent) > 0 &&
-        (CACHE.cp.blocked || !CACHE.cp.corr || CACHE.cp.short))
+        (ctx ? ctx.noCP : (CACHE.cp.blocked || !CACHE.cp.corr || CACHE.cp.short)))
       return {on:false, f:{}, n:1, eff:"CP 사용 불가", optIdx:0};
   }
   const cb = r.tile ? null : r.el.querySelector("input[type=checkbox]");
@@ -1862,7 +1880,8 @@ const simRows = $("simrows");
 function actionOptions(){
   const uni = CLASSES["공용"].k;
   const own = $("cls").value === "공용" ? [] : (CLASSES[$("cls").value] || {k:[]}).k;
-  const list = [["명상","명상 (에너지 +2)"],["방어","방어"],["대기","대기"]];
+  const list = [["명상","명상 (에너지 +2)"],["방어","방어 (받는 피해 감소)"],["대기","대기"],
+                ["포션","포션 (회복)"],["점화","Soul Ignition (커럽션 발동)"],["도주","도주"]];
   uni.concat(own, subOf().k, markSkills()).forEach(s => list.push(["s:"+s.n, s.n + "  ("+s.c+"NRG · CD"+s.cd+")"]));
   return list;
 }
@@ -1907,6 +1926,13 @@ function runSim(){
   if (num("dotPoison")) deb["중독"] = num("dotPoison");
   if (+$("dotBleed").value) deb["출혈"] = 99;
   let nrg = 1, combo = 0, total = 0, cds = {}, afterMeditate = false, last = null, hp = hp0, killTurn = 0;
+  // ── 내 쪽 상태 ──
+  const myMax = num("myHP") > 0 ? num("myHP") : 100 + SV("END") + CACHE.ar.hp + Math.round(CACHE.ar.hpPct);
+  const guardCut = Math.min(0.9, 0.5 + SV("STR") * 0.001);   // 50% + 근력의 10%
+  const inc = num("incDmg");
+  const corr = $("corr").value;
+  let myHp = myMax, ce = 0, cpNow = num("cpHave"), notch = 0, ignited = false, recoil = 0, died = 0;
+  const NOTCH_CAP = 2;
 
   const debAccOf = () => {
     const a = EMPTY(); let hex = false;
@@ -1940,12 +1966,32 @@ function runSim(){
     const turn = i + 1;
     nrg += perTurn;
     for (const k in cds) if (cds[k] > 0) cds[k]--;
+    // 커럽트 에너지: 미발동이면 축적, 발동 중이면 턴당 10 감소
+    if (corr){
+      if (!ignited) ce = Math.min(100, ce + 10 + 2 * nrg);
+      else {
+        ce -= 10;
+        if (ce <= 0){ ignited = false; ce = 0;
+          const back = myMax * (recoil / 100);
+          myHp -= back; recoil = 0; }
+      }
+    }
     const act = row.querySelector(".act").value;
     row.querySelector(".tn").textContent = "T" + turn;
-    let dmg = 0, st = "", bad = false;
+    let dmg = 0, st = "", bad = false, guarded = false;
 
     if (act === "명상"){ nrg += 2; combo = 0; st = "명상 · NRG " + nrg; afterMeditate = true; }
-    else if (act === "방어" || act === "대기"){ combo = 0; st = act + " · NRG " + nrg; afterMeditate = false; }
+    else if (act === "포션"){ combo = 0; myHp = Math.min(myMax, myHp + num("potHeal"));
+      st = "포션 +" + num("potHeal"); afterMeditate = false; }
+    else if (act === "점화"){
+      combo = 0; afterMeditate = false;
+      if (!corr){ bad = true; st = "⚠ 커럽션 없음"; }
+      else if (ce < 100){ bad = true; st = "⚠ 커럽트 에너지 " + ce + "/100"; }
+      else { ignited = true; ce = 99; st = "커럽션 발동 (Soul Ignition)"; }
+    }
+    else if (act === "도주"){ combo = 0; st = "도주 시도"; afterMeditate = false; }
+    else if (act === "방어" || act === "대기"){ combo = 0; guarded = act === "방어";
+      st = act + " · NRG " + nrg; afterMeditate = false; }
     else {
       const sk = skillByName(act.slice(2));
       if (!sk){ st = "?"; }
@@ -1953,11 +1999,38 @@ function runSim(){
       else if (cds[sk.n] > 0){ bad = true; st = "⚠ 쿨타임 " + cds[sk.n] + "턴"; combo = 0; afterMeditate = false; }
       else {
         nrg -= sk.c; cds[sk.n] = sk.cd; combo++;
+        // ── 블라스페미 노치 ──
+        let notchAcc = EMPTY(), notchNote = "";
+        const blas = corr === "blas" && ignited;
+        let notchSpent = 0;
+        if (blas){
+          if (sk.c >= 3 && notch > 0){
+            notchSpent = notch;
+            notchAcc.multi += Math.min(30, 10 * notchSpent);
+            cpNow += 15 * notchSpent; nrg += notchSpent; notch = 0;
+            notchNote = " · 노치 " + notchSpent + " 소모 +" + Math.min(30, 10 * notchSpent) + "%";
+          } else if (sk.c <= 2){
+            notch = Math.min(NOTCH_CAP, notch + 1);
+            cpNow += 15 * notch;
+            notchNote = " · 노치 " + notch;
+          }
+        }
+        // ── 커럽트 파워 소모 (타수마다) ──
+        let cpAcc = EMPTY(), cpNote = "";
+        const cpBlocked = blas && sk.c >= 3;
+        if (!cpBlocked && CACHE.cp && CACHE.cp.per > 0 && corr){
+          const need = CACHE.cp.per * sk.h;
+          if (cpNow >= need){ cpNow -= need; cpNote = " · CP −" + need; }
+          else { cpAcc = null; cpNote = " · CP 부족(" + cpNow + "/" + need + ")"; }
+        } else if (CACHE.cp && CACHE.cp.per > 0){
+          cpAcc = null; cpNote = cpBlocked ? " · 노치 소모라 CP 불가" : " · 커럽션 없음";
+        }
         const DA = debAccOf();
         const SH = shardState({hpPct: hp / hp0 * 100,
                     debTgt: Object.values(deb).filter(v => v > 0).length});
-        const M = mergeAcc(mergeAcc(mergeAcc(mergeAcc(mergeAcc(collectMods({turn, combo, afterMeditate}), P.acc),
+        let M = mergeAcc(mergeAcc(mergeAcc(mergeAcc(mergeAcc(collectMods({turn, combo, afterMeditate, noCP: cpAcc === null}), P.acc),
                     soulState({turn, afterMeditate}).acc), WA), DA.a), SH);
+        M = mergeAcc(M, notchAcc);
         const sc = sk.s.length ? 1 + sk.s.reduce((a,[st2,d]) => a + (d > 0 ? SV(st2)/d : 0), 0) : scaleMul().mul;
         let base = sk.b, extraNote = "";
         if (sk.consumeDeb){                       // 코니수라
@@ -1969,7 +2042,8 @@ function runSim(){
         const r = resolve(M, {base, scale: sc});
         const k = critParts(M);
         dmg = (r.afterDR * k.expected + r.trueDmg) * sk.h;
-        st = "NRG " + nrg + " · " + sk.h + "타" + (combo > 1 ? " · 연속 " + combo : "") + extraNote;
+        st = "NRG " + nrg + " · " + sk.h + "타" + (combo > 1 ? " · 연속 " + combo : "") + extraNote + notchNote + cpNote;
+        if (blas) recoil += 5 * sk.c;   // 공격할수록 리코일이 쌓인다
         if (DA.hex && deb["헥스"]) deb["헥스"]--;
         if (sk.consumeDeb) for (const n of Object.keys(deb)) delete deb[n];
         else applyDeb((SKILL_EXTRA[sk.n] || {}).deb);
@@ -1981,8 +2055,15 @@ function runSim(){
     const extra = dnow + P.allyDmg;
     const turnTotal = dmg + extra;
     if (extra > 0) st += (st ? " · " : "") + "도트·파티 +" + fmt(extra);
+    const taken = guarded ? inc * (1 - guardCut) : inc;
+    myHp -= taken;
+    if (myHp <= 0 && !died){ died = turn; }
     const dtx = debText();
     if (dtx) st += " · [" + dtx + "]";
+    st += "  |  HP " + Math.max(0, Math.round(myHp)) + "/" + Math.round(myMax) +
+          (corr ? " · CE " + Math.round(ce) + (ignited ? "(발동)" : "") + " · CP " + Math.round(cpNow) +
+                  (corr === "blas" ? " · 노치 " + notch : "") + (recoil ? " · 리코일 " + recoil : "") : "");
+    if (died === turn) st += " · ☠ 사망";
     tickDeb();
     hp -= turnTotal;
     if (hp <= 0 && !killTurn){ killTurn = turn; st += " · 처치"; }
@@ -1992,7 +2073,8 @@ function runSim(){
     total += turnTotal;
   });
   $("simTotal").textContent = fmt(total) +
-    (killTurn ? "   (T" + killTurn + " 처치)" : "   (남은 HP " + fmt(Math.max(0, hp)) + ")");
+    (killTurn ? "   (T" + killTurn + " 처치)" : "   (대상 잔여 " + fmt(Math.max(0, hp)) + ")") +
+    (died ? "   ⚠ T" + died + " 내가 사망" : "");
   SIM = {total, killTurn, left: Math.max(0, hp), seq: rows.map((row,i) => ({
     t: "T" + (i+1),
     label: row.querySelector(".act").selectedOptions[0].textContent.split("  (")[0],
@@ -2241,6 +2323,9 @@ function dmgWith(acc0, stats){
 function candidates(){
   const slots = Math.max(0, Math.round(num("traitSlots")));
   const useCP = $("useCP").checked, useCond = $("useCond").checked;
+  const real = $("realism").value === "real";
+  // 현실 빌드에서는 스택을 최대치의 절반만 가정한다
+  const cap = it => it.max ? (real ? Math.max(1, Math.ceil(it.max / 2)) : it.max) : 1;
   const out = [];
   MODS.forEach(grp => {
     grp.items.forEach((it, ii) => {
@@ -2258,8 +2343,9 @@ function candidates(){
         if (!f || !Object.keys(f).length) return;
         const cpc = CP_COST(label);
         if (cpc && (!useCP || !CACHE.cp || CACHE.cp.blocked || !CACHE.cp.corr)) return;
-        out.push({kind, gid:grp.g+ii, label:it.n + (optIdx !== undefined ? " · " + it.opts[optIdx][0] : ""),
-                  f, n: it.max || 1, item:it, optIdx, cp: cpc});
+        out.push({kind, gid:grp.g+ii, label:it.n + (optIdx !== undefined ? " · " + it.opts[optIdx][0] : "") +
+                    (it.max && cap(it) < it.max ? " ×" + cap(it) : ""),
+                  f, n: cap(it), item:it, optIdx, cp: cpc});
       };
       if (it.opts) it.opts.forEach((o,k) => push(o[1], o[0], k));
       else push(it.f, "");
@@ -2268,9 +2354,80 @@ function candidates(){
   (CLASSES[$("cls").value] || {p:[]}).p.concat(subOf().p).forEach((it, ii) => {
     if (!$("useCond").checked) return;
     if (!it.f || !Object.keys(it.f).length) return;
-    out.push({kind:"cond", gid:"cp"+ii, label:"[클래스] " + it.n, f:it.f, n:it.max || 1, item:it, cls:ii});
+    out.push({kind:"cond", gid:"cp"+ii, label:"[클래스] " + it.n, f:it.f, n:cap(it), item:it, cls:ii});
+  });
+  // 파티원이 줄 수 있는 버프 (최대 3명)
+  if (useCond) PARTY_BUFFS.forEach((b, bi) => {
+    if (!b[1] || !Object.keys(b[1]).length) return;
+    out.push({kind:"party", gid:"pb"+bi, label:"[파티] " + b[0], f:b[1], n:1,
+              item:{n:"[파티] "+b[0], f:b[1]}, pb:bi});
   });
   return out;
+}
+
+/* 데이터만으로 무기/샤드/갑옷 보정을 만든다 (DOM 안 건드림) */
+function weaponAccOf(name){
+  const w = WEAPONS[name] || {f:{}};
+  const a = EMPTY(), n = w.max ? w.max : 1;      // 스택형 무기는 최대치 기준
+  for (const [k,v] of Object.entries(w.f)) a[k] += v * n;
+  return a;
+}
+function shardPlanOf(weapon, realism){
+  const slots = WEAPON_SLOTS[weapon] || 0;
+  if (!slots) return {acc:EMPTY(), type:"— 비움 —", grade:"r", slots:0};
+  let best = {acc:EMPTY(), type:"— 비움 —", grade:"r", slots, val:0};
+  for (const [t, sh] of Object.entries(SHARDS)){
+    if (t === "— 비움 —") continue;
+    if (realism === "real" && (sh.cond === "hpLow" || sh.cond === "debSelf")) continue; // 유지하기 어려운 조건
+    for (const grade of ["r","p"]){
+      const v = grade === "r" ? sh.r : sh.p;
+      let per = 0;
+      if (sh.cond === "none") per = v;
+      else if (sh.cond === "hpHigh") per = v;                       // 여는 턴 기준
+      else if (sh.cond === "debTgt") per = v * (realism === "real" ? 3 : 6);
+      else if (sh.cond === "hpLow") per = v;
+      else if (sh.cond === "debSelf") per = v * (realism === "real" ? 2 : 5);
+      const total = per * slots;
+      if (total > best.val){
+        const a = EMPTY(); a.multi = total;
+        best = {acc:a, type:t, grade, slots, val:total};
+      }
+    }
+  }
+  return best;
+}
+function armorStatOf(name){
+  const a = ARMORS[name] || {};
+  const flat = {STR:0,ARC:0,END:0,SPD:0,LCK:0}, pct = {STR:0,ARC:0,END:0,SPD:0,LCK:0};
+  for (const [k,v] of Object.entries(a.flat || {})) flat[k] += v;
+  for (const [k,v] of Object.entries(a.pct || {})) pct[k] += v;
+  return {flat, pct, hp:a.hp || 0, hpPct:a.hpPct || 0, name};
+}
+
+/* 마스터리 35포인트를 최적 배분 (시작 4노드 고정 + 두 갈래) */
+function solveMastery(base, stats, cls){
+  const nd = MAST_NODES[cls];
+  if (!nd) return null;
+  const per = num("mPer");
+  const saved = CACHE.mb;
+  const branches = ["L","M","R"];
+  let best = null;
+  for (let a = 0; a < 3; a++) for (let b = a+1; b < 3; b++){
+    // 두 갈래만 채운다 (가운데 5코스트 노드를 건너뛰는 실제 제약)
+    for (let n1 = 0; n1 <= 31; n1++){
+      const n2 = 31 - n1;
+      const bonus = {STR:0,ARC:0,END:0,SPD:0,LCK:0};
+      bonus[nd.start] += 4 * per;
+      bonus[nd[branches[a]]] += n1 * per;
+      bonus[nd[branches[b]]] += n2 * per;
+      CACHE.mb = bonus;
+      const d = dmgWith(base, stats);
+      if (!best || d > best.d) best = {d, a:branches[a], b:branches[b], n1, n2, bonus};
+      if (n1 % 5 !== 0 && n1 !== 31) n1 += 4;   // 5단위로 훑고
+    }
+  }
+  CACHE.mb = best ? best.bonus : saved;
+  return best;
 }
 
 function allocStats(acc, budget){
@@ -2292,7 +2449,7 @@ function allocStats(acc, budget){
 }
 
 function greedyPick(stats, pool, caps){
-  const chosen = [], used = {gear:0, art:0, trait:0, cond:0}, seen = new Set();
+  const chosen = [], used = {gear:0, art:0, trait:0, cond:0, party:0}, seen = new Set();
   const hits = Math.max(1, Math.round(num("hits")));
   const cpHave = CACHE.cp ? CACHE.cp.have : 0;
   let cpSpent = 0;
@@ -2343,7 +2500,8 @@ function solve(){
   refreshCache();
   const goal = num("goal"), budget = num("budget"), slots = Math.round(num("traitSlots"));
   const pool = candidates();
-  const caps = {gear:4, art:2, trait: slots > 0 ? 1 : 0, cond: 99};
+  const real = $("realism").value === "real";
+  const caps = {gear:4, art:2, trait: slots > 0 ? 1 : 0, cond: real ? 3 : 99, party: 3};
   const soulBudget = num("soulBudget");
   let stats = allocStats(EMPTY(), budget), chosen = [], soulPick = {picked:[], spent:0};
   for (let pass = 0; pass < 3; pass++){
@@ -2351,6 +2509,28 @@ function solve(){
     if (soulBudget > 0) soulPick = solveSoul(accOf(chosen), stats, soulBudget);
     stats = allocStats(accOf(chosen), budget);
   }
+  // ── 장비 세트 전수 탐색 ──
+  let gearSet = null;
+  if ($("optGearSet").checked){
+    const savedW = CACHE.weapon, savedA = CACHE.ar;
+    let bestSet = null;
+    for (const wn of Object.keys(WEAPONS)){
+      const sp = shardPlanOf(wn, $("realism").value);
+      const wacc = mergeAcc(weaponAccOf(wn), sp.acc);
+      for (const an of Object.keys(ARMORS)){
+        CACHE.weapon = wacc; CACHE.ar = armorStatOf(an);
+        const d = dmgWith(accOf(chosen), stats);
+        if (!bestSet || d > bestSet.d) bestSet = {d, wn, an, sp, wacc, ar:armorStatOf(an)};
+      }
+    }
+    if (bestSet){ CACHE.weapon = bestSet.wacc; CACHE.ar = bestSet.ar; gearSet = bestSet; }
+    else { CACHE.weapon = savedW; CACHE.ar = savedA; }
+  }
+  // ── 마스터리 배분 ──
+  let mastPlan = null;
+  if ($("optMast").checked) mastPlan = solveMastery(accOf(chosen), stats, $("cls").value);
+  stats = allocStats(accOf(chosen), budget);
+
   let dmg = dmgWith(accOf(chosen), stats);
 
   // 목표를 넘겼다면 필요 없는 항목부터 덜어냄
@@ -2386,13 +2566,13 @@ function solve(){
     .sort((a,b) => b.d - a.d).slice(0,3).filter(x => x.d > 0.01);
 
   window.__cpSpent = chosen.reduce((a,c) => a + (c.cp || 0) * Math.max(1, Math.round(num("hits"))), 0);
-  render(chosen, contrib, nextUp, stats, dmg, goal, baseline, trimmed, slots, soulPick);
+  render(chosen, contrib, nextUp, stats, dmg, goal, baseline, trimmed, slots, soulPick, gearSet, mastPlan);
   window.__build = {chosen, stats, soulPick};
 }
 
-function render(chosen, contrib, nextUp, stats, dmg, goal, baseline, trimmed, slots, soulPick){
+function render(chosen, contrib, nextUp, stats, dmg, goal, baseline, trimmed, slots, soulPick, gearSet, mastPlan){
   const ok = dmg >= goal;
-  const groupOf = k => ({gear:"기어", art:"유물·인챈트", trait:"특성", cond:"상황·버프"})[k];
+  const groupOf = k => ({gear:"기어", art:"유물·인챈트", trait:"특성", cond:"상황·버프", party:"파티 지원"})[k];
   const byKind = {};
   chosen.forEach(c => (byKind[c.kind] = byKind[c.kind] || []).push(c));
 
@@ -2435,6 +2615,14 @@ function render(chosen, contrib, nextUp, stats, dmg, goal, baseline, trimmed, sl
           return li(c.label, "+" + fmt(d ? d.d : 0));
         }).join("") + '</ul>').join("") +
 
+      (gearSet ? '<h4 style="margin-top:12px">장비 세트</h4><ul>' +
+        li("무기", gearSet.wn) + li("갑옷", gearSet.an) +
+        li("샤드 ×" + gearSet.sp.slots, gearSet.sp.type + " " + (gearSet.sp.grade === "r" ? "레디언트" : "퓨어") +
+           (gearSet.sp.val ? " (+" + (+gearSet.sp.val.toFixed(1)) + "%)" : "")) + '</ul>' : "") +
+      (mastPlan ? '<h4 style="margin-top:12px">마스터리 (35p)</h4><ul>' +
+        li("시작 노드", STATS[MAST_NODES[$("cls").value].start] + " ×4") +
+        li(STATS[MAST_NODES[$("cls").value][mastPlan.a]] + " 갈래", mastPlan.n1 + " 노드") +
+        li(STATS[MAST_NODES[$("cls").value][mastPlan.b]] + " 갈래", mastPlan.n2 + " 노드") + '</ul>' : "") +
       (soulPick && soulPick.picked.length ?
         '<h4 style="margin-top:12px">소울 트리 (' + soulPick.spent + 'p)</h4><ul>' +
         soulPick.picked.map(x => li(x.nd.n + " " + x.rank + "랭크",
@@ -2451,10 +2639,28 @@ function render(chosen, contrib, nextUp, stats, dmg, goal, baseline, trimmed, sl
       '<div style="margin-top:12px"><button type="button" class="btn pri" id="applyBuild">이 빌드를 계산기에 적용</button></div>' +
     '</div>';
 
-  $("applyBuild").addEventListener("click", () => applyBuild(chosen, stats, slots, soulPick));
+  $("applyBuild").addEventListener("click", () => applyBuild(chosen, stats, slots, soulPick, gearSet, mastPlan));
 }
 
-function applyBuild(chosen, stats, slots, soulPick){
+function applyBuild(chosen, stats, slots, soulPick, gearSet, mastPlan){
+  if (gearSet){
+    $("weap").value = gearSet.wn; $("armor").value = gearSet.an;
+    shardState(null);                                  // 슬롯 다시 그리기
+    document.querySelectorAll("#shardSlots .shType").forEach((sel,i) => {
+      sel.value = gearSet.sp.type;
+      document.querySelectorAll("#shardSlots .shGrade")[i].value = gearSet.sp.grade;
+    });
+  }
+  if (mastPlan){
+    const nd = MAST_NODES[$("cls").value];
+    ["L","M","R"].forEach(k => $("m"+k).value = 0);
+    $("m"+mastPlan.a).value = mastPlan.n1; $("m"+mastPlan.b).value = mastPlan.n2;
+  }
+  partyEl.querySelectorAll(".pbuff").forEach(sel => sel.value = "0");
+  chosen.filter(c => c.pb !== undefined).forEach((c,i) => {
+    const sel = partyEl.querySelectorAll(".pbuff")[i];
+    if (sel) sel.value = c.pb;
+  });
   if (soulPick){
     soulEl.querySelectorAll(".rank").forEach(sel => sel.value = "0");
     soulPick.picked.forEach(x => {
