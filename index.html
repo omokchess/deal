@@ -212,6 +212,35 @@
   details.ref[open] > summary::before{content:"▾ "}
   details.ref fieldset{margin-top:0}
 
+  /* ── 마스터리 트리 ── */
+  .mtree{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 10px;
+    justify-items:center;padding:6px 0 2px;position:relative}
+  .mtree .row{display:contents}
+  .mnode{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);
+    background:var(--panel-2);color:var(--ink-faint);cursor:pointer;position:relative;
+    display:flex;align-items:center;justify-content:center;font-size:10px;
+    font-family:"JetBrains Mono",monospace;margin:9px 0}
+  .mnode::before{content:"";position:absolute;top:-10px;left:50%;width:1px;height:10px;
+    background:var(--line);transform:translateX(-50%)}
+  .mnode.first::before{display:none}
+  .mnode:hover{border-color:var(--gold);color:var(--ink)}
+  .mnode:focus-visible{outline:2px solid var(--gold-bright);outline-offset:2px}
+  .mnode.on{background:var(--sel);border-color:var(--gold);color:var(--ink);
+    box-shadow:0 0 0 1px var(--gold)}
+  .mnode.on::before{background:var(--gold)}
+  .mnode.lock{border-style:dashed;border-radius:6px}
+  .mnode.abil{border-radius:4px;transform:rotate(45deg);font-size:9px}
+  .mnode.abil span{transform:rotate(-45deg)}
+  .mnode.enh{border-radius:4px;transform:rotate(45deg);border-width:2px;font-size:9px}
+  .mnode.enh span{transform:rotate(-45deg)}
+  .mnode.span3{grid-column:1/-1}
+  .mhead{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;
+    text-align:center;font-size:10.5px;color:var(--ink-faint);margin-top:4px}
+  .mhead b{display:block;color:var(--ink);font-weight:500;font-size:11.5px}
+  .mlegend{display:flex;flex-wrap:wrap;gap:10px;font-size:10.5px;color:var(--ink-faint);margin-top:10px}
+  .mlegend span{display:flex;align-items:center;gap:4px}
+  .mlegend i{font-style:normal;color:var(--gold)}
+
   /* ── 빌드 카드 ── */
   .card{margin:0 0 22px;border:1px solid var(--gold);border-radius:5px;background:var(--panel);
     padding:20px 22px 22px;box-shadow:var(--shadow)}
@@ -321,6 +350,26 @@
   <button type="button" class="tab" role="tab" data-t="solve" aria-selected="false">역산<span class="dot" hidden></span></button>
 </div>
 <div class="tabpane" data-p="build">
+  <fieldset>
+    <legend>빌드 불러오기</legend>
+    <textarea id="buildText" rows="10" spellcheck="false"
+      style="width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:3px;
+             background:var(--panel-2);color:var(--ink);font-family:'JetBrains Mono',monospace;
+             font-size:12px;line-height:1.6;resize:vertical"
+      placeholder="종족 : 보레아스&#10;스탯 : 올 럭&#10;클래스 : 브롤러&#10;마스터리 : 210&#10;서브 클래스 : 바드&#10;무기 : 토건&#10;샤드 : 리버싱 2, 엠파워 2, 셰터링 2, 볼택 1&#10;갑옷 : 브롤러 갑옷&#10;인챈트 : 커스드&#10;유물 : 스텔리안 코어&#10;커럽션 : 블펨&#10;기어 :&#10;- 크리스탈라인 스파이크&#10;- 크리스탈라이즈드 스타&#10;- 손가락&#10;- 쉐도우 건틀렛"></textarea>
+    <div style="display:flex;gap:8px;margin-top:9px;flex-wrap:wrap">
+      <button type="button" class="btn pri" id="loadBuild">빌드 적용</button>
+      <button type="button" class="btn" id="dumpBuild">현재 빌드를 텍스트로</button>
+      <label style="flex-direction:row;align-items:center;gap:6px;margin-left:auto">
+        <input type="checkbox" id="soulAll" checked style="width:15px;accent-color:var(--gold)">
+        <span style="font-size:12px">소울 트리 전부 찍은 상태로</span></label>
+    </div>
+    <div id="loadOut"></div>
+    <p class="hint">줄마다 <code>항목 : 값</code>, 기어는 <code>- 이름</code>으로 나열하면 됩니다.
+      줄임말(토건·손가락·블펨·올 럭 …)과 오타도 이름 검색으로 최대한 맞춰 찾습니다.
+      <code>or</code>로 여러 개를 적으면 앞의 것을 씁니다.</p>
+  </fieldset>
+
   <fieldset>
     <legend>클래스 &amp; 스킬</legend>
     <div class="grid c3">
@@ -440,6 +489,8 @@
 <div class="tabpane" data-p="gear" hidden>
   <fieldset>
     <legend>기어 <span class="cnt" id="gearCnt">0/4</span></legend>
+    <input type="text" id="gearSearch" placeholder="기어 이름 검색…"
+      style="margin-bottom:9px;font-family:'Noto Sans KR',sans-serif">
     <div class="tiles" id="tiles_gear"></div>
     <p class="capmsg" id="cap_gear"></p>
   </fieldset>
@@ -464,6 +515,8 @@
 
   <fieldset>
     <legend>샤드 <span class="cnt" id="shardCnt">0/0</span></legend>
+    <label style="max-width:220px;margin-bottom:10px"><span class="k">슬롯 추가 <span class="en">아카니움 크리스탈</span></span>
+      <input type="number" id="shardExtra" value="0" min="0" max="6" step="1"></label>
     <div id="shardSlots" class="grid c3"></div>
     <div class="mrow" style="grid-template-columns:1fr auto;margin-top:8px">
       <span class="nm" id="shardOut">—</span></div>
@@ -499,7 +552,7 @@
   </fieldset>
 
   <fieldset>
-    <legend>마스터리 <span class="cnt" id="mastCnt">0/35</span></legend>
+    <legend>마스터리</legend>
     <div id="mastery"></div>
     <p class="hint">한 슬롯당 마스터리 포인트는 최대 35개라 세 갈래 중 두 갈래까지만 채울 수 있습니다 (가운데 5코스트 노드를 건너뛰면 좌·우 둘 다 가능).
       일반 노드는 아래로 갈수록 스탯 제공량이 늘어나는데 트렐로에 정확한 수치가 없어, <b>노드당 평균 스탯</b>을 직접 조절하게 해뒀습니다 (기본 1.0).
@@ -1570,36 +1623,113 @@ const MAST_NODES = {
 "헥서 (중립·지팡이)":   {start:"END", L:"SPD", M:"ARC", R:"LCK"},
 "네크로맨서 (악·지팡이)":{start:"LCK", L:"SPD", M:"ARC", R:"END"}
 };
+/* 마스터리 트리 — 트렐로가 노드 수(일반 26 / 돌파 5 / 돌파 능력 3 / 강화 돌파 3)만 적어둬서
+   위치는 실제 트리 모양에 맞춰 근사했다. 일반 1p, 돌파 능력·강화 돌파 각 5p, 자물쇠는 돌파 포인트. */
+const MTREE = {start:4, B:{L:{n1:4, n2:3}, M:{n1:4, n2:3}, R:{n1:5, n2:3}}};
+const MPOINTS = 35;
+let MST = {L:{n1:0, ab:false, n2:0, en:false}, M:{n1:0, ab:false, n2:0, en:false},
+           R:{n1:0, ab:false, n2:0, en:false}, start:true};
+
 $("mastery").innerHTML =
   '<div class="grid c3">' +
-    '<label><span class="k">시작 노드 <span class="en">4개 고정</span></span><input type="text" id="mStart" value="—" readonly></label>' +
     '<label><span class="k">노드당 평균 스탯</span><input type="number" id="mPer" value="1" step="0.1" min="0"></label>' +
-    '<label><span class="k">돌파 노드</span><input type="number" id="mBreak" value="0" min="0" max="5" step="1"></label>' +
+    '<label><span class="k">표기 <span class="en">좌·중·우</span></span><input type="text" id="mNote" value="000" maxlength="3"></label>' +
+    '<label><span class="k">시작 노드 <span class="en">4개 고정</span></span><input type="text" id="mStart" value="—" readonly></label>' +
   '</div>' +
-  '<div class="grid c3" style="margin-top:11px">' +
-    ["L","M","R"].map(k => '<label><span class="k"><span id="mLbl'+k+'">—</span> 노드 수</span>' +
-      '<input type="number" id="m'+k+'" value="0" min="0" max="12" step="1"></label>').join("") +
+  '<div class="mhead" id="mHead"></div>' +
+  '<div class="mtree" id="mTree"></div>' +
+  '<div class="mlegend">' +
+    '<span><i>●</i> 일반 노드 1p</span><span><i>🔒</i> 돌파 (돌파 포인트)</span>' +
+    '<span><i>◆</i> 돌파 능력 5p</span><span><i>◈</i> 강화 돌파 5p</span>' +
+    '<span>클릭하면 위쪽 경로까지 함께 찍힙니다</span>' +
   '</div>' +
-  '<div class="mrow" style="margin-top:10px;grid-template-columns:1fr auto"><span class="nm">획득 스탯</span>' +
-    '<span class="eff" id="mOut">—</span></div>';
+  '<div class="mrow" style="grid-template-columns:1fr auto;margin-top:8px">' +
+    '<span class="nm" id="mOut">—</span><span class="eff" id="mUse">0/35</span></div>';
 
+const BR = ["L","M","R"];
+function mCost(st){
+  let c = st.start ? MTREE.start : 0;
+  BR.forEach(k => { c += st[k].n1 + st[k].n2 + (st[k].ab ? 5 : 0) + (st[k].en ? 5 : 0); });
+  return c;
+}
+function mSetPath(br, kind, idx){
+  const b = MST[br];
+  if (kind === "n1"){ b.n1 = b.n1 === idx ? idx - 1 : idx; if (b.n1 < MTREE.B[br].n1){ b.ab = false; b.n2 = 0; b.en = false; } }
+  if (kind === "ab"){ if (b.ab){ b.ab = false; b.n2 = 0; b.en = false; } else { b.n1 = MTREE.B[br].n1; b.ab = true; } }
+  if (kind === "n2"){ if (b.n2 >= idx){ b.n2 = idx - 1; b.en = false; } else { b.n1 = MTREE.B[br].n1; b.ab = true; b.n2 = idx; } }
+  if (kind === "en"){ if (b.en) b.en = false;
+    else { b.n1 = MTREE.B[br].n1; b.ab = true; b.n2 = MTREE.B[br].n2; b.en = true; } }
+  renderMastery(); calc();
+}
+function renderMastery(){
+  const nd = MAST_NODES[$("cls").value];
+  const tree = $("mTree"); tree.innerHTML = "";
+  $("mStart").value = nd ? STATS[nd.start] + " 노드 4개" : "클래스를 먼저 고르세요";
+  $("mHead").innerHTML = BR.map(k => '<div>' + ({L:"왼쪽",M:"가운데",R:"오른쪽"})[k] +
+    '<b>' + (nd ? STATS[nd[k]] : "—") + '</b></div>').join("");
+  if (!nd){ $("mOut").textContent = "—"; return; }
+
+  const cell = (cls, label, title, on, fn, first) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "mnode " + cls + (on ? " on" : "") + (first ? " first" : "");
+    b.title = title;
+    b.innerHTML = cls.includes("abil") || cls.includes("enh") ? '<span>' + label + '</span>' : label;
+    if (fn) b.addEventListener("click", fn); else b.style.cursor = "default";
+    return b;
+  };
+  // 시작 노드 4개 (공용)
+  for (let i = 0; i < MTREE.start; i++)
+    tree.appendChild(Object.assign(cell("span3", "●", "시작 " + STATS[nd.start] + " 노드", MST.start, null, i === 0)));
+  tree.appendChild(cell("span3 lock", "🔒", "돌파 — 아래 단계를 여는 자물쇠", true, null));
+  // 갈래별 일반 n1
+  const maxN1 = Math.max(...BR.map(k => MTREE.B[k].n1));
+  for (let i = 1; i <= maxN1; i++) BR.forEach(k => {
+    if (i > MTREE.B[k].n1){ tree.appendChild(document.createElement("span")); return; }
+    tree.appendChild(cell("", "●", STATS[nd[k]] + " 노드 " + i, MST[k].n1 >= i, () => mSetPath(k, "n1", i)));
+  });
+  BR.forEach(k => tree.appendChild(cell("lock", "🔒", "갈래 돌파", MST[k].ab, null)));
+  BR.forEach(k => tree.appendChild(cell("abil", "◆", "돌파 능력 (5p)", MST[k].ab, () => mSetPath(k, "ab"))));
+  tree.appendChild(cell("span3 lock", "🔒", "돌파 — 강화 단계", BR.some(k => MST[k].en), null));
+  const maxN2 = Math.max(...BR.map(k => MTREE.B[k].n2));
+  for (let i = 1; i <= maxN2; i++) BR.forEach(k => {
+    if (i > MTREE.B[k].n2){ tree.appendChild(document.createElement("span")); return; }
+    tree.appendChild(cell("", "●", STATS[nd[k]] + " 하단 노드 " + i, MST[k].n2 >= i, () => mSetPath(k, "n2", i)));
+  });
+  BR.forEach(k => tree.appendChild(cell("enh", "◈", "강화 돌파 능력 (5p)", MST[k].en, () => mSetPath(k, "en"))));
+
+  $("mNote").value = BR.map(k => MST[k].en ? "2" : MST[k].ab ? "1" : "0").join("");
+}
 function masteryState(){
   const nd = MAST_NODES[$("cls").value];
   const bonus = {STR:0, ARC:0, END:0, SPD:0, LCK:0};
-  ["L","M","R"].forEach(k => $("mLbl"+k).textContent = nd ? STATS[nd[k]] : "—");
-  $("mStart").value = nd ? STATS[nd.start] + " 노드 4개" : "클래스를 먼저 고르세요";
-  if (!nd){ $("mOut").textContent = "—"; $("mastCnt").textContent = "0/35"; return {bonus, used:0}; }
+  if (!nd){ $("mOut").textContent = "—"; $("mUse").textContent = "0/" + MPOINTS; return {bonus, used:0}; }
   const per = num("mPer");
-  bonus[nd.start] += 4 * per;
-  let used = 4;
-  ["L","M","R"].forEach(k => { const n = num("m"+k); bonus[nd[k]] += n * per; used += n; });
-  used += num("mBreak") * 5;
-  $("mastCnt").textContent = used + "/35";
-  $("mastCnt").style.color = used > 35 ? "var(--warn)" : "";
-  $("mOut").textContent = Object.entries(bonus).filter(([,v]) => v > 0)
-    .map(([k,v]) => STATS[k] + " +" + (+v.toFixed(1))).join(" · ") || "—";
+  if (MST.start) bonus[nd.start] += MTREE.start * per;
+  BR.forEach(k => {
+    // 아래로 내려갈수록 제공량이 늘어난다 — 하단 노드는 1.5배로 잡았다
+    bonus[nd[k]] += MST[k].n1 * per + MST[k].n2 * per * 1.5;
+  });
+  const used = mCost(MST);
+  $("mUse").textContent = used + "/" + MPOINTS;
+  $("mUse").style.color = used > MPOINTS ? "var(--warn)" : "";
+  $("mOut").innerHTML = Object.entries(bonus).filter(([,v]) => v > 0)
+    .map(([k,v]) => STATS[k] + " +" + (+v.toFixed(1))).join(" · ") +
+    ' <span class="en">표기 ' + BR.map(k => MST[k].en ? "2" : MST[k].ab ? "1" : "0").join("") + '</span>';
   return {bonus, used};
 }
+/* 표기(예: 210)로 한 번에 세팅 */
+function mFromNote(note){
+  const v = String(note || "").replace(/[^0-2]/g, "").padEnd(3, "0").slice(0, 3);
+  BR.forEach((k, i) => {
+    const t = +v[i];
+    MST[k] = {n1: t >= 0 ? MTREE.B[k].n1 : 0, ab: t >= 1, n2: t >= 2 ? MTREE.B[k].n2 : 0, en: t >= 2};
+    if (t === 0) MST[k] = {n1: MTREE.B[k].n1, ab:false, n2:0, en:false};
+  });
+  renderMastery();
+}
+$("mNote").addEventListener("change", () => { mFromNote($("mNote").value); calc(); });
+
 // 스탯 최종값 = 입력값 + 마스터리 보너스
 $("race").innerHTML = Object.keys(RACES).map(n => '<option value="'+n+'">'+n+'</option>').join("");
 
@@ -1712,7 +1842,7 @@ function weaponState(){
   return {acc, name:$("weap").value};
 }
 function shardState(ctx){
-  const slots = WEAPON_SLOTS[$("weap").value] || 0;
+  const slots = (WEAPON_SLOTS[$("weap").value] || 0) + Math.max(0, Math.round(num("shardExtra")));
   const host = $("shardSlots");
   if (host.children.length !== slots){
     host.innerHTML = Array.from({length: slots}, (_, i) =>
@@ -2206,8 +2336,9 @@ function renderCard(M, r, k, hits, expPerHit){
   });
   const mst = MAST_NODES[$("cls").value];
   if (mst) ["L","M","R"].forEach(kk => {
-    const n = num("m" + kk);
-    if (n) chips.push("마스터리 · <b>" + STATS[mst[kk]] + "</b> 노드 ×" + n);
+    const b = MST[kk], n = b.n1 + b.n2;
+    if (n || b.ab) chips.push("마스터리 · <b>" + STATS[mst[kk]] + "</b> " + n + "노드" +
+      (b.en ? " ◈" : b.ab ? " ◆" : ""));
   });
   partyEl.querySelectorAll(".mrow").forEach((row, i) => {
     const b = PARTY_BUFFS[+row.querySelector(".pbuff").value];
@@ -2222,6 +2353,233 @@ function renderCard(M, r, k, hits, expPerHit){
         '</span><span>' + s.label + '</span><span class="d">' + s.dmg + '</span></li>').join("")
     : '<li><span class="t">—</span><span style="color:var(--ink-faint)">행동 시뮬레이션이 비어 있습니다</span><span></span></li>';
 }
+
+/* ══════════ 빌드 텍스트 불러오기 ══════════ */
+const NORM = x => String(x || "").toLowerCase().replace(/[\s()·・,~\-—_'"]/g, "").replace(/[0-9]+%/g, "");
+const ALIAS = {
+  "토건":"역병 (토리안)", "토리안건틀릿":"역병 (토리안)", "역병":"역병 (토리안)",
+  "용골":"용골 (야툴)", "태초":"태초 (핸다콘다)", "사암":"사암 (핸다콘다)",
+  "흑혈통":"흑혈통 (메트롬 베셀)", "태양":"태양 (세라폰)", "슬라임":"슬라임 (킹 슬라임)",
+  "대검":"대검 (Great Sword)", "페러스":"페러스 (기본)",
+  "크리스탈라인스파이크":"결정화된 가시", "크리스탈라인":"결정화된 가시", "크리스탈스파이크":"결정화된 가시",
+  "손가락":"코아귤레이트 핑거 네일", "핑거네일":"코아귤레이트 핑거 네일",
+  "야툴워레스":"야툴 워레스 (과열)", "워레스":"야툴 워레스 (과열)",
+  "블펨":"블라스페미 (노치)", "블라스페미":"블라스페미 (노치)",
+  "타이레니":"타이래니", "타이라니":"타이래니", "폭정":"타이래니",
+  "헤러시":"헤레시", "이단":"헤레시",
+  "바드":"음유시인", "알케미스트":"연금술사", "블랙스미스":"대장장이", "마이너":"광부",
+  "브롤러갑옷":"방랑하는 수련가 (브롤러)", "몽크갑옷":"여행자 스님 (몽크)",
+  "버서커갑옷":"격노의 전사 (버서커)", "로그갑옷":"도적 사냥꾼 (로그)",
+  "어쌔신갑옷":"어둠의 망토 (어쌔신)", "엘리멘탈리스트갑옷":"마법의 옷 (엘리멘탈리스트)",
+  "셰터링":"섀터링", "쉐터링":"섀터링", "엠파워":"엠파워링", "볼택":"볼태익", "볼테익":"볼태익",
+  "리제네":"리제네이티브", "익스큐션":"익스큐팅",
+  "쉐도우건틀렛":"쉐도우 건틀렛", "섀도우건틀렛":"쉐도우 건틀렛"
+};
+const STAT_ALIAS = {"럭":"LCK","행운":"LCK","luck":"LCK","근력":"STR","힘":"STR","str":"STR",
+  "신비":"ARC","마력":"ARC","arc":"ARC","체력":"END","end":"END","속도":"SPD","spd":"SPD"};
+
+function findBest(input, list){
+  const q = NORM(input);
+  if (!q) return null;
+  if (ALIAS[q] && list.includes(ALIAS[q])) return ALIAS[q];
+  let exact = list.find(x => NORM(x) === q);
+  if (exact) return exact;
+  const contains = list.filter(x => NORM(x).includes(q) || q.includes(NORM(x)));
+  if (contains.length) return contains.sort((a,b) => Math.abs(NORM(a).length - q.length) - Math.abs(NORM(b).length - q.length))[0];
+  // 글자 겹침이 가장 많은 것
+  let best = null, bs = 0;
+  list.forEach(x => {
+    const n = NORM(x); let hit = 0;
+    for (const ch of new Set(q)) if (n.includes(ch)) hit++;
+    const sc = hit / Math.max(q.length, 1);
+    if (sc > bs && sc >= 0.6){ bs = sc; best = x; }
+  });
+  return best;
+}
+function selectByName(id, name, label, log){
+  const list = [...$(id).options].map(o => o.value);
+  const hit = findBest(name, list);
+  if (hit){ $(id).value = hit; log.ok.push(label + " → " + hit); return hit; }
+  log.miss.push(label + " : " + name + " (목록에 없음)");
+  return null;
+}
+
+function loadBuild(){
+  const raw = $("buildText").value;
+  const log = {ok:[], miss:[]};
+  if (!raw.trim()){ $("loadOut").innerHTML = ""; return; }
+
+  // 줄 파싱: "키 : 값" / "- 항목"
+  const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  const data = {}; let cur = null;
+  lines.forEach(l => {
+    const m = l.match(/^([^:：]+)[:：]\s*(.*)$/);
+    if (m){ cur = m[1].trim(); data[cur] = (data[cur] ? data[cur] + "\n" : "") + m[2].trim(); }
+    else if (/^[-•*]/.test(l) && cur) data[cur] += "\n" + l.replace(/^[-•*]\s*/, "");
+  });
+  const get = keys => { for (const k of Object.keys(data)){
+      if (keys.some(q => NORM(k) === NORM(q) || NORM(k).includes(NORM(q)))) return data[k]; }
+    return null; };
+  const first = v => String(v || "").split(/\n/)[0].split(/\s+or\s+|\/|,/)[0].replace(/\(.*?\)/g, "").trim();
+
+  // ── 종족 · 클래스 · 서브 · 커럽션 · 무기 · 갑옷 ──
+  const race = get(["종족"]);        if (race) selectByName("race", first(race), "종족", log);
+  const cls  = get(["클래스"]);      // "서브 클래스" 와 겹치지 않게 정확히 찾는다
+  const clsV = data["클래스"] || (cls && !data["서브 클래스"] ? cls : null);
+  if (clsV){ if (selectByName("cls", first(clsV), "클래스", log)) $("cls").dispatchEvent(new Event("change")); }
+  const sub = data["서브 클래스"] || data["서브클래스"] || get(["서브"]);
+  if (sub){ if (selectByName("sub", first(sub), "서브 클래스", log)) $("sub").dispatchEvent(new Event("change")); }
+  const weap = get(["무기"]);        if (weap) selectByName("weap", first(weap), "무기", log);
+  const armor = get(["갑옷"]);       if (armor) selectByName("armor", first(armor), "갑옷", log);
+  const corr = get(["커럽션"]);
+  if (corr){
+    const want = NORM(first(corr));
+    const map = {"블라스페미노치":"blas", "블라스페미":"blas", "블펨":"blas",
+                 "헤레시":"her", "이단":"her", "타이래니":"tyr", "타이레니":"tyr", "폭정":"tyr"};
+    const key = map[want] || (ALIAS[want] === "블라스페미 (노치)" ? "blas" : ALIAS[want] === "타이래니" ? "tyr" : ALIAS[want] === "헤레시" ? "her" : "");
+    if (key){ $("corr").value = key; log.ok.push("커럽션 → " + $("corr").selectedOptions[0].textContent); }
+    else log.miss.push("커럽션 : " + first(corr));
+  }
+
+  // ── 스탯 ──
+  const st = get(["스탯"]);
+  if (st){
+    const t = st.replace(/\s/g, "");
+    let done = false;
+    for (const [k,v] of Object.entries(STAT_ALIAS)){
+      if (new RegExp("올" + k, "i").test(t) || new RegExp("^" + k + "몰빵").test(t)){
+        Object.keys(STATS).forEach(x => $(x).value = 0);
+        $(v).value = charState().budget; done = true;
+        log.ok.push("스탯 → " + STATS[v] + " 몰빵 (" + charState().budget + ")");
+        break;
+      }
+    }
+    if (!done){
+      const found = [...st.matchAll(/([가-힣A-Za-z]+)\s*[:=]?\s*(\d+)/g)];
+      if (found.length){
+        Object.keys(STATS).forEach(x => $(x).value = 0);
+        found.forEach(([,nm,val]) => { const key = STAT_ALIAS[NORM(nm)]; if (key) $(key).value = +val; });
+        log.ok.push("스탯 → " + found.map(f => f[1] + " " + f[2]).join(", "));
+      } else log.miss.push("스탯 : " + st);
+    }
+  }
+
+  // ── 마스터리 표기 ──
+  const mast = get(["마스터리"]);
+  if (mast){
+    const n = (first(mast).match(/[0-2]{3}/) || [])[0];
+    if (n){ $("mNote").value = n; mFromNote(n); log.ok.push("마스터리 → 표기 " + n); }
+    else log.miss.push("마스터리 : " + first(mast));
+  }
+
+  // ── 기어 (최대 4) ──
+  const gear = get(["기어"]);
+  if (gear){
+    document.querySelectorAll('#tiles_gear .tile[aria-pressed="true"]').forEach(t => t.click());
+    const names = gear.split(/\n/).map(x => x.trim()).filter(Boolean);
+    const tiles = [...document.querySelectorAll('#tiles_gear .tile')];
+    const list = tiles.map(t => t.querySelector(".tn").textContent);
+    names.slice(0, 4).forEach(nm => {
+      const hit = findBest(nm, list);
+      if (hit){ tiles[list.indexOf(hit)].click(); log.ok.push("기어 → " + hit); }
+      else log.miss.push("기어 : " + nm);
+    });
+  }
+  // ── 유물 · 인챈트 (최대 2) ──
+  const artNames = [];
+  const art = get(["유물"]), ench = get(["인챈트"]);
+  if (art && !/오브/.test(Object.keys(data).find(k => data[k] === art) || "")) artNames.push(first(art));
+  if (ench) artNames.push(first(ench));
+  if (artNames.length){
+    document.querySelectorAll('#tiles_art .tile[aria-pressed="true"]').forEach(t => t.click());
+    const tiles = [...document.querySelectorAll('#tiles_art .tile')];
+    const list = tiles.map(t => t.querySelector(".tn").textContent);
+    artNames.slice(0, 2).forEach(nm => {
+      const hit = findBest(nm, list);
+      if (hit){ tiles[list.indexOf(hit)].click(); log.ok.push("유물·인챈트 → " + hit); }
+      else log.miss.push("유물·인챈트 : " + nm);
+    });
+  }
+
+  // ── 샤드 ──
+  const shard = get(["샤드"]);
+  if (shard){
+    shardState(null);                                   // 무기에 맞춰 슬롯 재생성
+    const types = [...document.querySelectorAll("#shardSlots .shType")];
+    const grades = [...document.querySelectorAll("#shardSlots .shGrade")];
+    types.forEach(t => t.value = "— 비움 —");
+    let slot = 0, want = 0;
+    shard.split(/[,\n]/).forEach(part => {
+      const m = part.trim().match(/^(.+?)\s*(\d+)?$/);
+      if (!m) return;
+      const hit = findBest(m[1], Object.keys(SHARDS));
+      const cnt = m[2] ? +m[2] : 1;
+      if (!hit || hit === "— 비움 —"){ log.miss.push("샤드 : " + part.trim()); return; }
+      want += cnt;
+      let put = 0;
+      for (let i = 0; i < cnt && slot < types.length; i++, slot++, put++){
+        types[slot].value = hit; grades[slot].value = "r";
+      }
+      log.ok.push("샤드 → " + hit + " ×" + put + (put < cnt ? " (요청 " + cnt + ", 슬롯 부족)" : ""));
+    });
+    if (want > types.length) log.miss.push("샤드 " + want + "개를 적었는데 이 무기의 슬롯은 " +
+      types.length + "개입니다 — 「슬롯 추가」로 늘리세요 (아카니움 크리스탈)");
+  }
+
+  // ── 소울 트리 전부 ──
+  if ($("soulAll").checked){
+    soulEl.querySelectorAll(".mrow").forEach(row => {
+      const nd = SOUL[row.dataset.b][1][row.dataset.i];
+      row.querySelector(".rank").value = String(nd.r);
+    });
+    log.ok.push("소울 트리 → 전 노드 최대 랭크");
+  }
+
+  // ── 반영 못 한 항목 ──
+  ["길드", "로스트 스크롤", "유물 오브", "마크"].forEach(k => {
+    const v = get([k]);
+    if (v && !/^\s*[xX×없]/.test(v)) log.miss.push(k + " : " + first(v) + " (계산기에 없는 항목)");
+  });
+
+  fillSkills(); renderClassPassives(); refreshActions(); renderMastery(); calc();
+  $("loadOut").innerHTML =
+    '<div class="breakdown" style="margin-top:12px"><h4>적용됨 (' + log.ok.length + ')</h4><ul>' +
+      (log.ok.map(x => "<li><span>" + x + "</span></li>").join("") || '<li class="empty">없음</li>') + '</ul>' +
+    (log.miss.length ? '<h4 style="margin-top:10px;color:var(--warn)">못 찾음 · 미반영 (' + log.miss.length + ')</h4><ul>' +
+      log.miss.map(x => '<li><span>' + x + '</span></li>').join("") + '</ul>' : "") + '</div>';
+}
+$("loadBuild").addEventListener("click", loadBuild);
+
+/* 현재 상태를 같은 형식으로 뽑기 */
+$("dumpBuild").addEventListener("click", () => {
+  const gear = [...document.querySelectorAll('#tiles_gear .tile[aria-pressed="true"] .tn')].map(x => x.textContent);
+  const art = [...document.querySelectorAll('#tiles_art .tile[aria-pressed="true"] .tn')].map(x => x.textContent);
+  const sh = {};
+  document.querySelectorAll("#shardSlots .shType").forEach(x => { if (x.value !== "— 비움 —") sh[x.value] = (sh[x.value]||0)+1; });
+  const lines = [
+    "종족 : " + $("race").value,
+    "스탯 : " + Object.keys(STATS).filter(k => num(k)).map(k => STATS[k] + " " + num(k)).join(", "),
+    "클래스 : " + $("cls").value,
+    "마스터리 : " + $("mNote").value,
+    "서브 클래스 : " + $("sub").value,
+    "무기 : " + $("weap").value,
+    "샤드 : " + (Object.entries(sh).map(([k,v]) => k + " " + v).join(", ") || "X"),
+    "갑옷 : " + $("armor").value,
+    "유물 : " + (art.join(", ") || "X"),
+    "커럽션 : " + ($("corr").selectedOptions[0].textContent),
+    "기어 :", ...gear.map(g => "- " + g)
+  ];
+  $("buildText").value = lines.join("\n");
+});
+
+/* 기어 검색 */
+$("gearSearch").addEventListener("input", () => {
+  const q = NORM($("gearSearch").value);
+  document.querySelectorAll("#tiles_gear .tile").forEach(t => {
+    const n = NORM(t.querySelector(".tn").textContent + (t.querySelector(".tnote") ? t.querySelector(".tnote").textContent : ""));
+    t.style.display = !q || n.includes(q) ? "" : "none";
+  });
+});
 
 /* ── 테마 ── */
 const THEMES = [["dark","☾ 밤"], ["light","☀ 낮"]];
@@ -2404,27 +2762,33 @@ function armorStatOf(name){
   return {flat, pct, hp:a.hp || 0, hpPct:a.hpPct || 0, name};
 }
 
-/* 마스터리 35포인트를 최적 배분 (시작 4노드 고정 + 두 갈래) */
+/* 마스터리 35포인트 최적 배분 — 새 트리 구조 위에서 전수 탐색 */
 function solveMastery(base, stats, cls){
   const nd = MAST_NODES[cls];
   if (!nd) return null;
-  const per = num("mPer");
-  const saved = CACHE.mb;
-  const branches = ["L","M","R"];
+  const saved = CACHE.mb, per = num("mPer");
+  const opts = k => {
+    const o = [];
+    for (let n1 = 0; n1 <= MTREE.B[k].n1; n1++) o.push({n1, ab:false, n2:0, en:false});
+    for (let n2 = 0; n2 <= MTREE.B[k].n2; n2++) o.push({n1:MTREE.B[k].n1, ab:true, n2, en:false});
+    o.push({n1:MTREE.B[k].n1, ab:true, n2:MTREE.B[k].n2, en:true});
+    return o;
+  };
   let best = null;
-  for (let a = 0; a < 3; a++) for (let b = a+1; b < 3; b++){
-    // 두 갈래만 채운다 (가운데 5코스트 노드를 건너뛰는 실제 제약)
-    for (let n1 = 0; n1 <= 31; n1++){
-      const n2 = 31 - n1;
-      const bonus = {STR:0,ARC:0,END:0,SPD:0,LCK:0};
-      bonus[nd.start] += 4 * per;
-      bonus[nd[branches[a]]] += n1 * per;
-      bonus[nd[branches[b]]] += n2 * per;
-      CACHE.mb = bonus;
-      const d = dmgWith(base, stats);
-      if (!best || d > best.d) best = {d, a:branches[a], b:branches[b], n1, n2, bonus};
-      if (n1 % 5 !== 0 && n1 !== 31) n1 += 4;   // 5단위로 훑고
-    }
+  const cost = (k,o) => o.n1 + o.n2 + (o.ab ? 5 : 0) + (o.en ? 5 : 0);
+  const L = opts("L"), M = opts("M"), R = opts("R");
+  for (const a of L) for (const b of M) for (const c of R){
+    const used = MTREE.start + cost("L",a) + cost("M",b) + cost("R",c);
+    if (used > MPOINTS) continue;
+    const bonus = {STR:0,ARC:0,END:0,SPD:0,LCK:0};
+    bonus[nd.start] += MTREE.start * per;
+    bonus[nd.L] += a.n1 * per + a.n2 * per * 1.5;
+    bonus[nd.M] += b.n1 * per + b.n2 * per * 1.5;
+    bonus[nd.R] += c.n1 * per + c.n2 * per * 1.5;
+    CACHE.mb = bonus;
+    const d = dmgWith(base, stats);
+    if (!best || d > best.d) best = {d, plan:{L:a, M:b, R:c}, used, bonus,
+      note:[a,b,c].map(x => x.en ? "2" : x.ab ? "1" : "0").join("")};
   }
   CACHE.mb = best ? best.bonus : saved;
   return best;
@@ -2619,10 +2983,12 @@ function render(chosen, contrib, nextUp, stats, dmg, goal, baseline, trimmed, sl
         li("무기", gearSet.wn) + li("갑옷", gearSet.an) +
         li("샤드 ×" + gearSet.sp.slots, gearSet.sp.type + " " + (gearSet.sp.grade === "r" ? "레디언트" : "퓨어") +
            (gearSet.sp.val ? " (+" + (+gearSet.sp.val.toFixed(1)) + "%)" : "")) + '</ul>' : "") +
-      (mastPlan ? '<h4 style="margin-top:12px">마스터리 (35p)</h4><ul>' +
+      (mastPlan ? '<h4 style="margin-top:12px">마스터리 ' + mastPlan.used + '/35 · 표기 ' + mastPlan.note + '</h4><ul>' +
         li("시작 노드", STATS[MAST_NODES[$("cls").value].start] + " ×4") +
-        li(STATS[MAST_NODES[$("cls").value][mastPlan.a]] + " 갈래", mastPlan.n1 + " 노드") +
-        li(STATS[MAST_NODES[$("cls").value][mastPlan.b]] + " 갈래", mastPlan.n2 + " 노드") + '</ul>' : "") +
+        ["L","M","R"].map(k => li(({L:"왼쪽",M:"가운데",R:"오른쪽"})[k] + " · " + STATS[MAST_NODES[$("cls").value][k]],
+          mastPlan.plan[k].n1 + (mastPlan.plan[k].ab ? " +◆" : "") +
+          (mastPlan.plan[k].n2 ? " +" + mastPlan.plan[k].n2 : "") + (mastPlan.plan[k].en ? " +◈" : ""))).join("") +
+        '</ul>' : "") +
       (soulPick && soulPick.picked.length ?
         '<h4 style="margin-top:12px">소울 트리 (' + soulPick.spent + 'p)</h4><ul>' +
         soulPick.picked.map(x => li(x.nd.n + " " + x.rank + "랭크",
@@ -2651,11 +3017,7 @@ function applyBuild(chosen, stats, slots, soulPick, gearSet, mastPlan){
       document.querySelectorAll("#shardSlots .shGrade")[i].value = gearSet.sp.grade;
     });
   }
-  if (mastPlan){
-    const nd = MAST_NODES[$("cls").value];
-    ["L","M","R"].forEach(k => $("m"+k).value = 0);
-    $("m"+mastPlan.a).value = mastPlan.n1; $("m"+mastPlan.b).value = mastPlan.n2;
-  }
+  if (mastPlan){ MST = {start:true, L:mastPlan.plan.L, M:mastPlan.plan.M, R:mastPlan.plan.R}; renderMastery(); }
   partyEl.querySelectorAll(".pbuff").forEach(sel => sel.value = "0");
   chosen.filter(c => c.pb !== undefined).forEach((c,i) => {
     const sel = partyEl.querySelectorAll(".pbuff")[i];
@@ -2702,7 +3064,7 @@ function fillSkills(){
   }
 }
 $("sub").innerHTML = Object.keys(SUBCLASSES).map(n => '<option value="'+n+'">'+n+'</option>').join("");
-$("cls").addEventListener("change", () => { fillSkills(); renderClassPassives(); refreshActions(); calc(); });
+$("cls").addEventListener("change", () => { fillSkills(); renderClassPassives(); refreshActions(); renderMastery(); calc(); });
 $("sub").addEventListener("change", () => { fillSkills(); renderClassPassives(); refreshActions(); calc(); });
 // 마크 티어를 올리면 그 티어의 스킬이 목록에 바로 붙어야 한다
 $("markTiers").addEventListener("change", () => { fillSkills(); refreshActions(); calc(); });
@@ -2734,7 +3096,7 @@ $("drtable").innerHTML = [
     (r >= 0 ? "−" : "+")+pct.toFixed(1)+"%</td><td>"+note+"</td></tr>";
 }).join("");
 
-fillSkills(); renderClassPassives(); addScaler("STR", 75);
+fillSkills(); renderClassPassives(); renderMastery(); addScaler("STR", 75);
 addTurn("s:Strike"); addTurn("명상"); addTurn("s:Strike");
 $("aff").value = ELEM_DEFAULT;
 calc();
