@@ -1206,7 +1206,21 @@ const SKILL_EXTRA = {
 "[서브] 마크":           {sp:[["막기·회피 불가", {}]]},
 "[서브] 혼합물 투척":     {deb:[["취약",3],["약화",3]], sp:[["막기·회피 불가", {}]]},
 "[서브] The Right Angle":{deb:[["구속",4]]},
-"코니수라 (Conisura)":    {sp:[["대상 디버프 종류당 기본 +3 (헥스는 개당 +6)", {}]]}
+"코니수라 (Conisura)":    {sp:[["대상 디버프 종류당 기본 +3 (헥스는 개당 +6)", {}]]},
+"[종족] 서리바람":        {deb:[["취약",2],["약화",2],["추위",2]]},
+"[종족] 내면의 한기":      {deb:[["취약",1],["추위",4]], sp:[["헤비 스턴 2턴 후 발동", {}]]},
+"[종족] 영혼 불꽃":        {deb:[["유령 불꽃",3]]},
+"[종족] 생기 없는 해골":    {deb:[["유령 불꽃",2]]},
+"[종족] 인페르노 리프트":   {deb:[["분열",2],["화상",3]]},
+"[종족] 쏟아지는 저주":     {deb:[["헥스",1]]},
+"[종족] 뼈 던지기":        {deb:[["출혈",2]], sp:[["자기 체력 2.5%×2 소모", {}]]},
+"[종족] 피의 파편":        {deb:[["출혈",3]], sp:[["대상 취약 상태에서만 출혈", {}]]},
+"[종족] 환상 감옥":        {deb:[["기절",2]]},
+"[종족] 거대 괴수의 뺨싸대기":{deb:[["약화",3]]},
+"[종족] 하늘을 향한 번개":  {deb:[["실명",2]]},
+"[종족] 베인":            {deb:[["중독",3]]},
+"[종족] 잎사귀 난타":      {sp:[["치명타 확률 +50 보정", {crit:50}]]},
+"[종족] 충전 회로 (버프)":  {sp:[["자신에게 취약 2턴", {}]]}
 };
 
 /* ══════════ 2-h. 디버프 정의 ══════════
@@ -1224,7 +1238,8 @@ const DEBUFFS = {
 "저주":     {stk:true,  d:"인커밍·아웃고잉 힐 −20%/스택"},
 "실명":     {dur:true,  d:"막기·회피 바 축소"},
 "구속":     {dur:true,  d:"탈출 차단 · 막기/회피 삭제"},
-"기절":     {dur:true,  d:"턴 스킵"}
+"기절":     {dur:true,  d:"턴 스킵"},
+"추위":     {dur:true,  d:"스킬 쿨타임 50% 증가"}
 };
 
 /* ══════════ 2-i. 마크 ══════════ */
@@ -1261,6 +1276,110 @@ const WEAPON_SLOTS = {
 "사암 (핸다콘다)":3, "아이스린드":3, "아이보리":3, "코어알로이":3, "바스틱 글래이브":3,
 "슬라임 (킹 슬라임)":3, "곡괭이":0, "— 없음 —":0
 };
+
+/* ══════════ 2-k. 종족 스킬 · 패시브 ══════════
+   p: 패시브(체크박스) | k: 액티브(스킬 목록·시뮬 행동에 추가) | dyn: 스탯에서 계산 */
+const RACE_SK = {
+"에스텔라 (22%)":{p:[
+  {n:"[종족] 인내의 싸움꾼", note:"체력 40% 이하 · 방어 +10%, 회복 +50%", f:{}},
+  {n:"[종족] 격노 (35레벨)", note:"체력 50% 이하 · 피해량 +25%", f:{multi:25}}],
+ k:[{n:"[종족] 버티기 (버프)", b:0,h:1,c:2,cd:6,e:"물리",s:[],x:"받는 피해 30% 감소 · 4턴"}]},
+
+"니세 (18%)":{p:[
+  {n:"[종족] 마법 충전 (30레벨)", note:"마법·화염 스킬 +15%", f:{multi:15}},
+  {n:"[종족] 에너지 획득", note:"턴당 33% 확률 에너지 +1", f:{}}],
+ k:[{n:"[종족] 충전 회로 (버프)", b:0,h:1,c:0,cd:5,e:"물리",s:[],x:"에너지 +3 · 자신에게 취약 2턴"}]},
+
+"스툴투스 (18%)":{p:[
+  {n:"[종족] 치명타 확률 증가", note:"속도 10당 치명타 +1", dyn:() => ({crit: SV("SPD")/10})},
+  {n:"[종족] 회피의 재능", note:"가드 바 축소·회피 바 확대", f:{}}],
+ k:[{n:"[종족] 집중 (버프)", b:0,h:1,c:1,cd:7,e:"물리",s:[],x:"속도 = 레벨×2 · 자동 회피 확률"}]},
+
+"바스타얀 (9%)":{p:[
+  {n:"[종족] 마력 저주 증폭", note:"마법·저주 스킬 +10%", f:{multi:10}},
+  {n:"[종족] 정령의 소환사 (20레벨)", note:"소환수 체력 1.5배", f:{}}],
+ k:[{n:"[종족] 실프 소환", b:0,h:1,c:2,cd:7,e:"마법",s:[["STR",8],["ARC",8]],x:"체력 35 실프 소환"},
+    {n:"[종족] 영혼 각성 (버프)", b:0,h:1,c:4,cd:18,e:"마법",s:[],x:"전 스탯 +15%, 소환수 공격력 +50% · 종료 시 헤비 스턴 2 + 최대 체력 25% 자해"},
+    {n:"[종족] └ 윈드 볼트", b:5,h:1,c:0,cd:0,e:"자연",s:[]},
+    {n:"[종족] └ 게일 펄스", b:7,h:1,c:2,cd:6,e:"자연",s:[]}]},
+
+"베네리 (6%)":{p:[
+  {n:"[종족] 리치맨", note:"골드 최대치면 피해량 +20%", f:{multi:20}},
+  {n:"[종족] 인공 주입가", note:"인챈트 발동 확률 1.5배", f:{}}],
+ k:[{n:"[종족] 폭발 지뢰", b:10,h:1,c:2,cd:6,e:"화염",s:[],x:"물리 공격에 반응해 폭발 · 3턴"},
+    {n:"[종족] 절단의 부유", b:0,h:1,c:0,cd:10,e:"마법",s:[],x:"골드 최대 1000 소모 · 최고 스탯 버프"}]},
+
+"드라우가 (6%)":{p:[
+  {n:"[종족] 피의 욕망", note:"치명타 시 15% 흡혈", f:{}},
+  {n:"[종족] 극심한 욕망 (25레벨)", note:"적 처치 시 피해량 증가", f:{}}],
+ k:[{n:"[종족] 환상 감옥", b:0,h:1,c:2,cd:8,e:"마법",s:[],x:"덫 · 기절 2턴"},
+    {n:"[종족] 피의 파편", b:1.2,h:5,c:3,cd:7,e:"마법",s:[["STR",0],["ARC",0]],x:"입힌 만큼 회복 · 취약 대상이면 출혈 3턴 · 계수 분모 미표기"}]},
+
+"오피마르 (6%)":{p:[],
+ k:[{n:"[종족] 검은 혀", b:0,h:1,c:0,cd:10,e:"독",s:[],x:"다음 턴 공격에 Blacktongue 부여"}]},
+
+"다미노스 (3%)":{p:[
+  {n:"[종족] 회복량 증폭", note:"아웃고잉 힐링 +15%", f:{}}],
+ k:[{n:"[종족] 재조정 (힐)", b:0,h:1,c:2,cd:9,e:"자연",s:[],x:"리젠 2.5 + 최대 체력 2.5%"},
+    {n:"[종족] 멀리건 영역", b:0,h:1,c:3,cd:12,e:"자연",s:[],x:"아군 아웃고잉 힐링 증가"}]},
+
+"코르볼루스 (3%)":{p:[
+  {n:"[종족] 신성 마력 친화", note:"신성·마법 피해 +30%", f:{multi:30}},
+  {n:"[종족] Corvolus (P2 부호 반전 버그)", note:"패치노트 기재 −10%", f:{multi:-10}}],
+ k:[{n:"[종족] 주문 증폭 (버프)", b:0,h:1,c:1,cd:9,e:"마법",s:[],x:"대상 마법계열 +20%, 쿨타임 −1"},
+    {n:"[종족] 환상 의식 (버프)", b:0,h:1,c:3,cd:10,e:"마법",s:[],x:"팀 마법계열 +40%"}]},
+
+"아르보리비아 (3%)":{p:[
+  {n:"[종족] 방어 덩굴", note:"공격 시 스택당 받는 피해 −2.5%, 리젠 0.75 (최대 5)", f:{}},
+  {n:"[종족] 과성장 (30레벨)", note:"체력 최대에서 시전 시 치명타 +10", f:{crit:10}}],
+ k:[{n:"[종족] 잎사귀 난타", b:2,h:3,c:1,cd:6,e:"자연",s:[["STR",80],["ARC",80]],x:"전체 · 치명타 확률 +50 보정"},
+    {n:"[종족] 결백의 단풍", b:2,h:1,c:3,cd:10,e:"자연",s:[],x:"3턴 장판 · 턴마다 전체 피해"}]},
+
+"칼버리 (3%)":{p:[
+  {n:"[종족] 연약한 신체 (20레벨)", note:"15% 이상 피해를 절반으로 나눠 받음", f:{}}],
+ k:[{n:"[종족] 뼈 던지기", b:3.5,h:2,c:0,cd:3,e:"물리",s:[],x:"자기 체력 2.5%씩 2번 소모 · 두 번째 뼈는 출혈 2턴"},
+    {n:"[종족] 메짐성 치료 (버프)", b:0,h:1,c:1,cd:8,e:"물리",s:[],x:"현재 체력 10% 소모 · 피해 감소 25% 4턴"}]},
+
+"듀라한 (1%)":{p:[
+  {n:"[종족] 화염 저항", note:"받는 화염 피해 −20%", f:{}},
+  {n:"[종족] 강렬한 영혼", note:"10레벨마다 스탯 포인트 6개", f:{}}],
+ k:[{n:"[종족] 영혼 불꽃", b:5,h:1,c:1,cd:6,e:"화염",s:[["STR",80],["ARC",80]],x:"유령 불꽃 3턴"},
+    {n:"[종족] 생기 없는 해골", b:13,h:1,c:2,cd:5,e:"화염",s:[["STR",80],["ARC",80]],x:"확률로 유령 불꽃 2턴"}]},
+
+"바이디어 (1%)":{p:[
+  {n:"[종족] 유연공", note:"회피 시 확률로 에너지", f:{}}],
+ k:[{n:"[종족] 감각 확장", b:0,h:1,c:1,cd:3,e:"물리",s:[],x:"감각 스택 3"},
+    {n:"[종족] 마음을 뚫는 눈", b:0,h:1,c:2,cd:7,e:"물리",s:[],x:"받는 공격 기본 피해의 절반 반사"},
+    {n:"[종족] 영혼 반전 술식", b:0,h:1,c:3,cd:10,e:"물리",s:[],x:"감각 스택 비례 버프 · 2턴 파티 무적"}]},
+
+"보레아스 (1%)":{p:[
+  {n:"[종족] 추위의 빙각", note:"얼음 스킬당 아이스블러드 1 (스택당 +20%, 최대 200%)", f:{multi:20}, max:10, unit:"스택"}],
+ k:[{n:"[종족] 서리바람", b:9,h:1,c:1,cd:4,e:"얼음",s:[["STR",60],["ARC",60]],x:"전체 · 취약·약화·추위 2턴"},
+    {n:"[종족] 내면의 한기", b:21,h:1,c:2,cd:12,e:"얼음",s:[["STR",60],["ARC",60]],x:"자신 헤비 스턴 2턴 후 광역 · 취약 1턴, 추위 4턴"}]},
+
+"렌텀":{p:[{n:"[종족] 점성 재생", note:"패시브 리젠 2", f:{}}],
+ k:[{n:"[종족] 베인", b:7,h:1,c:1,cd:7,e:"독",s:[["STR",0],["ARC",0]],x:"주변까지 중독 · 계수 표기가 근력/신비"},
+    {n:"[종족] 뮤실러지 (버프)", b:0,h:1,c:3,cd:12,e:"물리",s:[],x:"3턴 피해 감소 장벽"}]},
+
+"아모루스":{p:[{n:"[종족] Amorus (방어)", note:"P2 환산 +15%", f:{multi:15}}],
+ k:[{n:"[종족] 불길한 시선", b:7,h:1,c:2,cd:7,e:"저주",s:[["STR",80],["ARC",80]],x:"자기 디버프 공유 · 적 버프 복사"},
+    {n:"[종족] 쏟아지는 저주", b:15,h:1,c:4,cd:9,e:"저주",s:[["STR",80],["ARC",80]],x:"헥스 1 부여 · 주변 피해"}]},
+
+"그닉스":{p:[{n:"[종족] 타고난 기력", note:"명상 시 에너지 2", f:{}}],
+ k:[{n:"[종족] 원시적인 표효", b:0,h:1,c:0,cd:10,e:"물리",s:[],x:"적 공격력 −25% 3턴"},
+    {n:"[종족] 거대 괴수의 뺨싸대기", b:10,h:1,c:2,cd:8,e:"물리",s:[["STR",0],["END",0]],x:"약화 3턴·도발 2턴 · 계수 분모 미표기"}]},
+
+"시아":{p:[{n:"[종족] 라피온의 은총", note:"최대 생명력 4", f:{}}],
+ k:[{n:"[종족] 하늘을 향한 번개", b:10,h:1,c:2,cd:6,e:"신성",s:[["STR",75],["ARC",75]],x:"실명 2턴"},
+    {n:"[종족] 백년대계", b:0,h:1,c:3,cd:8,e:"신성",s:[],x:"디버프 제거 + 치유"}]},
+
+"인페리온":{p:[
+  {n:"[종족] Inferion (공격, 화상 보유)", note:"P2 환산 +20%", f:{multi:20}}],
+ k:[{n:"[종족] 인페르노 리프트", b:12,h:1,c:3,cd:9,e:"화염",s:[["STR",75],["ARC",75]],x:"분열 2턴 · 자신과 대상에게 화상 3턴"}]},
+
+"오피마르 (6%) ":{p:[],k:[]}
+};
+const raceOf = () => RACE_SK[$("race").value] || {p:[], k:[]};
 
 const ELEM_DEFAULT = 1;
 
@@ -1329,14 +1448,14 @@ function renderClassPassives(){
   const host = $("clsPassives");
   host.innerHTML = "";
   clsRows = [];
-  const c = {p: (CLASSES[$("cls").value] || {p:[]}).p.concat(subOf().p)};
+  const c = {p: (CLASSES[$("cls").value] || {p:[]}).p.concat(subOf().p, raceOf().p)};
   if (!c.p.length) return;
   const box = document.createElement("div");
   box.className = "mgroup";
   box.style.marginTop = "12px";
-  box.innerHTML = "<h3>클래스 패시브 · 마스터리</h3>";
+  box.innerHTML = "<h3>클래스 · 서브 · 종족 패시브</h3>";
   c.p.forEach((it, ii) => {
-    if (!it.f || !Object.keys(it.f).length) {
+    if (!it.dyn && (!it.f || !Object.keys(it.f).length)) {
       const p = document.createElement("div");
       p.className = "mrow off";
       p.innerHTML = '<span></span><span style="color:var(--ink-faint);font-size:12px">' + it.n +
@@ -1440,7 +1559,8 @@ function readRow(r, ctx){
     if (it.sim === "medi")     on = ctx.afterMeditate;
   }
 
-  const f = it.opts ? it.opts[optIdx][1]
+  const f = it.dyn ? it.dyn()
+          : it.opts ? it.opts[optIdx][1]
           : (tierSel && tierSel.value === "1" && it.t2) ? it.t2 : (it.f || {});
   const eff = Object.entries(f).map(([k,v]) =>
       k === "reducMul" ? "×" + Math.pow(v,n).toFixed(3)
@@ -2082,7 +2202,7 @@ function actionOptions(){
   const own = $("cls").value === "공용" ? [] : (CLASSES[$("cls").value] || {k:[]}).k;
   const list = [["명상","명상 (에너지 +2)"],["방어","방어 (받는 피해 감소)"],["대기","대기"],
                 ["포션","포션 (회복)"],["점화","Soul Ignition (커럽션 발동)"],["도주","도주"]];
-  uni.concat(own, subOf().k, markSkills()).forEach(s => list.push(["s:"+s.n, s.n + "  ("+s.c+"NRG · CD"+s.cd+")"]));
+  uni.concat(own, subOf().k, raceOf().k, markSkills()).forEach(s => list.push(["s:"+s.n, s.n + "  ("+s.c+"NRG · CD"+s.cd+")"]));
   return list;
 }
 function addTurn(pick){
@@ -2107,7 +2227,7 @@ function refreshActions(){
 }
 
 function skillByName(n){
-  for (const c of Object.values(CLASSES).concat(Object.values(SUBCLASSES), Object.values(MARKS))){
+  for (const c of Object.values(CLASSES).concat(Object.values(SUBCLASSES), Object.values(RACE_SK), Object.values(MARKS))){
     const f = c.k.find(s => s.n === n); if (f) return f;
   }
   return null;
@@ -2779,9 +2899,9 @@ function candidates(){
       else push(it.f, "");
     });
   });
-  (CLASSES[$("cls").value] || {p:[]}).p.concat(subOf().p).forEach((it, ii) => {
+  (CLASSES[$("cls").value] || {p:[]}).p.concat(subOf().p, raceOf().p).forEach((it, ii) => {
     if (!$("useCond").checked) return;
-    if (!it.f || !Object.keys(it.f).length) return;
+    if (!it.dyn && (!it.f || !Object.keys(it.f).length)) return;
     out.push({kind:"cond", gid:"cp"+ii, label:"[클래스] " + it.n, f:it.f, n:cap(it), item:it, cls:ii});
   });
   // 파티원이 줄 수 있는 버프 (최대 3명)
@@ -3139,7 +3259,7 @@ $("solve").addEventListener("click", solve);
 
 /* ── 클래스/스킬 선택 ── */
 $("cls").innerHTML = Object.keys(CLASSES).map(n => '<option value="'+n+'">'+n+'</option>').join("");
-function skillPool(){ return (CLASSES[$("cls").value] || {k:[]}).k.concat(subOf().k, markSkills()); }
+function skillPool(){ return (CLASSES[$("cls").value] || {k:[]}).k.concat(subOf().k, raceOf().k, markSkills()); }
 function fillSkills(){
   const keep = $("skill").value !== "" && $("skill").selectedOptions[0]
     ? $("skill").selectedOptions[0].textContent : null;
@@ -3156,6 +3276,7 @@ $("cls").addEventListener("change", () => { fillSkills(); renderClassPassives();
 $("sub").addEventListener("change", () => { fillSkills(); renderClassPassives(); refreshActions(); calc(); });
 // 마크 티어를 올리면 그 티어의 스킬이 목록에 바로 붙어야 한다
 $("markTiers").addEventListener("change", () => { fillSkills(); refreshActions(); calc(); });
+$("race").addEventListener("change", () => { fillSkills(); renderClassPassives(); refreshActions(); calc(); });
 $("skill").addEventListener("change", () => {
   const i = $("skill").value;
   if (i === ""){ $("skillSp").innerHTML = ""; spRows = []; $("skillInfo").textContent = "베이스 클래스는 상위 슈퍼 클래스의 스킬을 그대로 따릅니다."; return; }
