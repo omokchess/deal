@@ -387,6 +387,8 @@
     <div class="grid c3">
       <label><span class="k">기본 피해량 <span class="en">Base</span></span><input type="number" id="base" value="5" step="0.1"></label>
       <label><span class="k">타수 <span class="en">Hits</span></span><input type="number" id="hits" value="1" step="1" min="1"></label>
+      <label><span class="k">공격 거리 <span class="en">110 마일스톤</span></span>
+        <select id="atkRange"><option value="melee">근접 (근력 110 → +20%)</option><option value="ranged">원거리 (신비 110 → +20%)</option></select></label>
       <label><span class="k">속성 <span class="en">Element</span></span>
         <select id="elem">
           <option value="1">보통 (×1.00)</option>
@@ -565,6 +567,17 @@
   <fieldset>
     <legend>전투 설정</legend>
     <div class="grid c3">
+      <label><span class="k">대상 프리셋</span>
+        <select id="tgtPreset">
+          <option value="">직접 입력</option>
+          <option value="145|1">리애니먼트 (145)</option>
+          <option value="250|0.1">센티언트 다크니스 (250)</option>
+          <option value="800|0.1">야툴 (800)</option>
+          <option value="2000|0.1">토리안 (2000)</option>
+          <option value="3500|0.1">세라폰 (3500)</option>
+          <option value="4000|0.1">아르카이아 (4000)</option>
+          <option value="6000|0.1">핸다콘다 (6000)</option>
+        </select></label>
       <label><span class="k">대상 최대 체력 <span class="en">HP</span></span><input type="number" id="tgtHP" value="145" step="5"></label>
       <label><span class="k">적 수</span><input type="number" id="enemies" value="1" min="1" max="4" step="1"></label>
       <label><span class="k">대상 종류</span>
@@ -689,7 +702,7 @@
 </details>
 
 <footer>
-  출처: AL_WG_P1 패치 노트 9·12장(스탯 개편, Part 2 대미지 공식), 아케인 리니지 한국 트렐로(피해량 공식과 계수, 기어·유물·인챈트·슈퍼 클래스 카드).
+  출처: AL_WG_P1 패치 노트 9·12장(스탯 개편, Part 2 대미지 공식), 2026-09-16 밸런스 패치, 아케인 리니지 한국 트렐로(피해량 공식과 계수, 기어·유물·인챈트·슈퍼 클래스 카드).
   보스는 도트 피해를 10%만 받습니다. 트루 대미지는 DR과 속성 상성을 완전히 무시합니다.
   트렐로에 분모가 적히지 않은 계수(근력, 신비 등)는 0으로 들어오니 직접 채워야 합니다.
 </footer>
@@ -708,9 +721,9 @@ const MODS = [
   {n:"행운의 뿔", opts:[["기본 +5%",{multi:5}],["CP 50 소모 +45%",{multi:45}]]},
   {n:"결정화된 가시", opts:[["기본 +5",{flat:5}],["CP 60 소모 +40",{flat:40}]]},
   {n:"피어나는 눈꽃", opts:[["기본 트루 +5",{trueFlat:5}],["CP 100 소모 +35",{trueFlat:35}]]},
-  {n:"세월의 장", opts:[["치명타 +5",{crit:5}],["CP 50 소모 +45",{crit:45}]]},
-  {n:"감염된 신체", note:"대상 착용 시", opts:[["방어력 +15",{reduc:15}],["CP 50 소모 +165",{reduc:165}]]},
-  {n:"쉐도우 건틀렛", note:"흡혈 5% → CP 45 소모 25%", f:{}},
+  {n:"세월의 장", opts:[["치명타 +5",{crit:5}],["CP 50 소모 +35",{crit:35}]]},
+  {n:"감염된 신체", note:"대상 착용 시", opts:[["방어력 +10",{reduc:10}],["CP 50 소모 +165",{reduc:165}]]},
+  {n:"쉐도우 건틀렛", note:"흡혈 3% → CP 45 소모 25%", f:{}},
   // ── 숲 ──
   {n:"일곱 잎의 에버시슬", note:"드랍률 1.85배 · 채집가 패시브", f:{}},
   {n:"아부스타 티어", note:"어그로 유도 액티브", f:{}},
@@ -724,12 +737,12 @@ const MODS = [
   {n:"크리스탈라이즈드 스타", note:"치명타마다 행운 +10", f:{crit:10}, max:5, unit:"스택"},
   {n:"엘리멘탈 인퓨저", note:"신비·화염·얼음·저주 스킬 턴당 +10%", f:{multi:10}, max:3, unit:"턴"},
   // ── 사막 ──
-  {n:"크리스탈 스패어", note:"치명타 확률 +5 · 크리 피로도 제거", f:{crit:5}},
+  {n:"크리스탈 스패어", note:"치명타 확률 +5 · 치명타 피해 +5%", f:{crit:5, critDmg:5}},
   {n:"스파이크드 스틸 볼", note:"35% 확률 추가타", f:{multi:35}},
   {n:"더스트 스톰", note:"피격 시 10% 확률 무효", f:{}},
-  {n:"그레인 오브 밸런스", note:"최고 스탯 25%를 다른 스탯에 분배", f:{}},
+  {n:"그레인 오브 밸런스", note:"최고 스탯에서 깎인 포인트의 절반을 다른 스탯에 분배", f:{}},
   {n:"밴드 오브 크러싱 포스", opts:[["방어 중인 적 +25%",{multi:25}],["2턴 지속 +10%",{multi:10}],["둘 다 +35%",{multi:35}]]},
-  {n:"스톤 브랜드", note:"소환수에게 Stone Skin (받는 피해 −60%)", f:{}},
+  {n:"스톤 브랜드", note:"소환수 Stone Skin (받는 피해 −60%) · 영구 지속, 쿨타임 999", f:{}},
   {n:"골렘 룬 코어", note:"샌드 골렘 소환", f:{}},
   {n:"래미즈칸 아이돌", note:"막기·패링 후 1턴", f:{multi:15}},
   {n:"매드시어 코덱스", note:"마법·화염·얼음·저주 공격 시 확률 디버프", f:{}},
@@ -767,11 +780,11 @@ const MODS = [
   {n:"이로디드 블레이드", note:"10% 확률 에너지 강탈", f:{}},
   {n:"야툴 워레스 (과열)", sim:"heat", note:"5턴당 1스택 · +8%", f:{multi:8}, max:10, unit:"스택"},
   {n:"블레이징 퍼포레이터", note:"화상 피해 무효 + 절반 회복", f:{}},
-  {n:"프로스트번드 룬", note:"30% 확률 추위·화상 부여", f:{}},
+  {n:"프로스트번드 룬", note:"30% 확률 추위·화상 부여 · 추위와 화상이 둘 다 걸린 적 +7.5%", f:{multi:7.5}},
   {n:"프테라 하트", note:"전투 시작 시 전원 독 3스택", f:{}},
   {n:"데스비크 대거", note:"치명타 시 추가 단검 (기본×치명타×0.15, 디버프 시 0.25)", f:{}},
   {n:"에스펙트 오브 맬라답션", note:"대상 착용", opts:[["같은 속성 −35%",{multi:-35}],["다른 속성 +30%",{multi:30}]]},
-  {n:"테인티드 퀴버", note:"첫 공격 분열 + 에너지 강탈", f:{}},
+  {n:"테인티드 퀴버", note:"첫 공격 분열 3턴 확정 · 이후 15% 확률 에너지 1 감소", f:{}},
   {n:"배인글로리우스 로켓", sim:"vain", opts:[["1턴차 +15%",{multi:15}],["2턴차 +10%",{multi:10}],["3턴차 +5%",{multi:5}]]},
   {n:"임뷰먼트 레일쿼리", note:"소환수가 인챈트 효과를 받음", f:{}},
   {n:"디바인 프로미스", note:"아군 피해 경감 10% 제공", f:{}},
@@ -799,9 +812,9 @@ const MODS = [
   {n:"다크 시길", note:"디버프 6개마다 레벨 2배 피해 + 취약·약화", f:{}},
   {n:"메트롬 아뮬렛", note:"적 처치 시 초과 피해로 폭발", f:{}},
   {n:"카오스 오브", note:"디버프 부여 시 33% 확률 무작위 디버프 추가", f:{}},
-  {n:"해븐즈 어토리티", note:"시아 소환수 호출", f:{}},
+  {n:"해븐즈 어토리티", note:"전용 스킬로 시아 소환 (기본 체력 50, 스켈레톤과 같은 계수) · 3NRG", f:{}},
   {n:"아르카이아 비새지", note:"3턴 계약 · 받는 피해를 대상도 받음", f:{}},
-  {n:"파라녹시안 크럭스", note:"최대 체력 1.5배 → 10%만 남기고 쉴드 전환", f:{}},
+  {n:"파라녹시안 크럭스", note:"최대 체력 75% 감소 → 줄어든 만큼 쉴드 전환", f:{}},
   {n:"셀레스티얼 엠블럼", note:"아스트라 마크 획득용", f:{}},
   // ── 인챈트 ──
   {n:"인페르노", note:"화상 걸린 적 +20%", f:{multi:20}},
@@ -811,7 +824,8 @@ const MODS = [
   {n:"프로스트", note:"추위 대상 폭발 기본 10", f:{}},
   {n:"폴라리스", note:"커럽트 에너지 소모 +20% · 리코일 −20% · CP 획득 +15%", f:{}},
   {n:"옥탄티스", note:"커럽트 에너지 소모 −20% · 리코일 −30%", f:{}},
-  {n:"스카이블레이즈", note:"에너지 획득 +30% · 소모 −20% · 리코일 −30% · CP +15%", f:{}}
+  {n:"스카이블레이즈", note:"에너지 획득 +30% · 소모 −20% · 리코일 −30% · CP +15%", f:{}},
+  {n:"미다스", note:"발동 시 행운 +5% 2턴, 최대 20%", f:{}, stp:{LCK:5}, max:4, unit:"스택"}
 ]},
 {g:"기어 특성 (오브)", sub:"T1/T2 · 최대 10개 중첩", tier:true, items:[
   {n:"[Heavy Hand] 2NRG 이상 스킬", f:{multi:5}, t2:{multi:9}},
@@ -836,13 +850,13 @@ const MODS = [
 ]},
 {g:"종족", items:[
   {n:"Inferion (공격, 화상 보유)", f:{multi:20}},
-  {n:"Boreas (공격)", note:"스택당 +20%", f:{multi:20}, max:7, unit:"스택"},
+  {n:"Boreas (공격)", note:"아이스블러드 스택당 +10%, 최대 50%", f:{multi:10}, max:5, unit:"스택"},
   {n:"Corvolus (마법·신성)", note:"패치노트 기재 부호 반전 버그", f:{multi:-10}},
   {n:"Inferion (대상 방어, 화상)", f:{reduc:17.65}},
   {n:"Boreas (대상 방어) 7스택", note:"실질 약 35% 감소", f:{reduc:53.85}},
   {n:"Amorus (대상 방어)", f:{multi:15}},
   {n:"Lentum (대상 방어)", f:{multi:20}},
-  {n:"아이스블러드", note:"스택당 +20%, 최대 200%", f:{multi:20}, max:10, unit:"스택"}
+  {n:"아이스블러드", note:"스택당 +10%, 최대 50%", f:{multi:10}, max:5, unit:"스택"}
 ]},
 {g:"커럽션", items:[
   {n:"노치 소모", note:"소모 1스택당 +10%", f:{multi:10}, max:3, unit:"스택"},
@@ -866,20 +880,20 @@ const CLASSES = {
   {n:"Flame Fists", note:"화상·영혼 불꽃 대상 +20%", f:{multi:20}},
   {n:"명상 후 다음 기술", sim:"medi", f:{multi:10}},
   {n:"마스터리 Blazing Barrage 강화", f:{multi:20}},
-  {n:"마스터리 Flame Drop 강화", note:"화상 소모 시 최대 +25% 추가", f:{multi:25}}
+  {n:"마스터리 Flame Drop 강화", note:"화상 스택당 +4%, 최대 40%", f:{multi:4}, max:10, unit:"스택"}
 ],k:[
   {n:"Blazing Barrage", b:2, h:8, c:2, cd:5, e:"화염", s:[["STR",0]]},
-  {n:"Flame Drop", b:15, h:1, c:3, cd:5, e:"화염", s:[["STR",60]]},
+  {n:"Flame Drop", b:15, h:1, c:3, cd:5, e:"화염", s:[["STR",60]], x:"적 전체 공격"},
   {n:"Fire Sutra (버프 +15%)", b:0, h:1, c:1, cd:6, e:"화염", s:[], x:"공격 아님 — 피해량 +15% 버프"},
   {n:"Holy Mantra (버프)", b:0, h:1, c:2, cd:6, e:"신성", s:[]}
 ]},
 "브롤러 (중립·주먹)":{p:[
-  {n:"Crusher", note:"새 디버프마다 +7%, 3턴", f:{multi:7}, max:5, unit:"스택"},
+  {n:"Crusher", note:"대상 상태이상 하나당 +7% (이미 걸린 것 포함), 최대 75%", f:{multi:7}, max:11, cap:75, unit:"개"},
   {n:"취약 대상 추가 피해", f:{multi:25}},
   {n:"마스터리 Oppression", note:"대상 디버프 개수당 +5%", f:{multi:5}, max:8, unit:"개"}
 ],k:[
   {n:"Crushing Strike", b:7, h:1, c:1, cd:6, e:"물리", s:[["STR",50]]},
-  {n:"Party Table", b:1.5, h:6, c:2, cd:5, e:"물리", s:[["STR",50]]},
+  {n:"Party Table", b:1.5, h:6, c:2, cd:5, e:"물리", s:[["STR",50]], x:"인접 대상까지 (숙련 시 전체)"},
   {n:"Burst Combo", b:3, h:4, c:2, cd:6, e:"물리", s:[["STR",50],["STR",75]], x:"첫타 근력/50, 이후 근력/75"}
 ]},
 "다크레이서 (악·주먹)":{p:[
@@ -889,15 +903,15 @@ const CLASSES = {
 ],k:[
   {n:"Dark Smite", b:2, h:4, c:2, cd:4, e:"어둠", s:[["ARC",75]]},
   {n:"Darkcore Eruption", b:3, h:1, c:1, cd:4, e:"어둠", s:[["ARC",55]], x:"타수 = 소모한 코어 개수"},
-  {n:"Call Darkbeast (소환)", b:0, h:1, c:1, cd:4, e:"어둠", s:[["ARC",4]]},
+  {n:"Call Darkbeast (소환)", b:0, h:1, c:0, cd:4, e:"어둠", s:[["ARC",4]]},
   {n:"└ Pounce", b:6, h:1, c:0, cd:0, e:"물리", s:[["ARC",105]]},
   {n:"└ Void Bite", b:11, h:1, c:2, cd:3, e:"저주", s:[["ARC",105]]},
   {n:"└ Shade Roar", b:9, h:1, c:3, cd:7, e:"어둠", s:[["ARC",109]]}
 ]},
 "팔라딘 (선·검)":{p:[
-  {n:"마스터리 Holy Crash 강화", f:{multi:25}}
+  {n:"마스터리 Holy Crash 강화", note:"기본 피해량 18 → 20", f:{flat:2}}
 ],k:[
-  {n:"Holy Crash", b:11, h:1, c:2, cd:6, e:"신성", s:[["STR",0],["END",0]], x:"계수 분모 미표기"},
+  {n:"Holy Crash", b:18, h:1, c:2, cd:6, e:"신성", s:[["STR",0],["END",150]], x:"근력 계수 분모 미표기 · 체력/150"},
   {n:"Pure Resonation", b:10, h:1, c:2, cd:8, e:"신성", s:[["STR",100],["END",100]]},
   {n:"Sacred Call (버프)", b:0, h:1, c:2, cd:7, e:"신성", s:[]}
 ]},
@@ -907,18 +921,17 @@ const CLASSES = {
 ],k:[
   {n:"Impaling Strike", b:14, h:1, c:1, cd:4, e:"물리", s:[["STR",80]]},
   {n:"Flowing Dance", b:1.75, h:12, c:3, cd:6, e:"물리", s:[["STR",75],["SPD",75]]},
-  {n:"Simple Domain (반사)", b:0, h:1, c:2, cd:6, e:"물리", s:[["STR",60]], x:"반사 스킬 기본 피해량 × 1.6"}
+  {n:"Simple Domain (반사)", b:0, h:1, c:2, cd:6, e:"물리", s:[["STR",60]], x:"반사 스킬 기본 피해량 × 1.6 · 적 전체 도발 2턴 (마스터리: 5턴, 쿨타임 4)"}
 ]},
 "버서커 (악·검)":{p:[
-  {n:"Bloodlust 진입", note:"체력 50% 미만 +20%", f:{multi:20}},
-  {n:"Bloodlust 스택", note:"스택당 +10%, 최대 8 (마스터리 15%)", f:{multi:10}, max:8, unit:"스택"},
-  {n:"체력 30% 미만", note:"마스터리 시 60%", f:{multi:40}},
+  {n:"Bloodlust", sim:"blood", note:"공격·피격마다 스택 · 스택당 +5% · 분노가 아니면 매 턴 사라짐", f:{multi:5}, max:10, unit:"스택"},
+  {n:"Rage (Rage Empower로 전환)", sim:"rage", note:"Bloodlust 스택당 +5% 추가 (합 10%) · 어그로↑ 방어↓", f:{multi:5}, max:10, unit:"스택"},
   {n:"Head Splitter 후속 버프", f:{multi:10}},
   {n:"마스터리 The Big Sword", note:"스트라이크 +40%", f:{multi:40}}
 ],k:[
   {n:"Head Splitter", b:16, h:1, c:2, cd:5, e:"물리", s:[["STR",50]]},
   {n:"Carnage", b:1, h:20, c:3, cd:7, e:"어둠", s:[["STR",100]], x:"추가 소모 에너지 1당 +20%, 최대 +100%"},
-  {n:"Rage Empower (버프)", b:0, h:1, c:1, cd:5, e:"물리", s:[]}
+  {n:"Rage Empower (버프)", b:0, h:1, c:1, cd:5, e:"물리", s:[], x:"분노 켜기/끄기 — 분노 중엔 Bloodlust가 사라지지 않음"}
 ]},
 "세인트 (선·창)":{p:[
   {n:"마스터리 Light Burst 강화", f:{multi:30}},
@@ -931,10 +944,12 @@ const CLASSES = {
 "랜서 (중립·창)":{p:[
   {n:"Rallying Shout", note:"팀 피해량 +15%", f:{multi:15}},
   {n:"Empowered Piercer 충전", note:"최대 +38%", f:{multi:38}},
-  {n:"막기 보정", note:"주 스탯 체력 아닐 때 최대 +10%", f:{multi:10}}
+  {n:"막기 보정", note:"주 스탯 체력 아닐 때 최대 +10%", f:{multi:10}},
+  {n:"Poised Slayer", note:"발동당 피해량 +10%, 최대 50%", f:{multi:10}, max:5, cap:50, unit:"회"},
+  {n:"마스터리 Overload", note:"2NRG 이상 스킬 사용 후 3턴 · 근력·행운 +10%", f:{}, stp:{STR:10, LCK:10}}
 ],k:[
-  {n:"Discharge", b:10, h:1, c:3, cd:4, e:"마법", s:[["STR",80],["SPD",80]]},
-  {n:"Empowered Piercer", b:15, h:1, c:2, cd:6, e:"물리", s:[["STR",80],["SPD",80]]},
+  {n:"Discharge", b:10, h:1, c:2, cd:4, e:"마법", s:[["STR",80],["SPD",80]]},
+  {n:"Empowered Piercer", b:15, h:1, c:3, cd:6, e:"물리", s:[["STR",80],["SPD",80]]},
   {n:"Rallying Shout (버프)", b:0, h:1, c:2, cd:7, e:"물리", s:[]}
 ]},
 "임패일러 (악·창)":{p:[
@@ -942,15 +957,15 @@ const CLASSES = {
   {n:"마스터리 Blood Eruption 강화", note:"주고받는 피해 +20%", f:{multi:20}}
 ],k:[
   {n:"Rending Barrage", b:5.6, h:3, c:2, cd:5, e:"물리", s:[["STR",75],["ARC",75]], x:"추가타 13.5 별도"},
-  {n:"Bloody Burst", b:5, h:2, c:1, cd:4, e:"물리", s:[["STR",75],["ARC",75]]},
-  {n:"Blood Eruption", b:15.6, h:1, c:3, cd:9, e:"마법", s:[["STR",0],["ARC",0]], x:"분모 미표기 · 강화 시 65/65"}
+  {n:"Bloody Burst", b:4.5, h:2, c:1, cd:4, e:"물리", s:[["STR",75],["ARC",75]]},
+  {n:"Blood Eruption", b:18, h:1, c:3, cd:8, e:"마법", s:[["STR",0],["ARC",0]], x:"분모 미표기 · 강화 시 65/65"}
 ]},
 "레인저 (선·단검)":{p:[
-  {n:"Verdant Archer", note:"마스터리 시 버프 15%", f:{multi:15}}
+  {n:"Verdant Archer", note:"스택당 +15%, 최대 150% · 아웃고잉 힐 +10% · 속도 = 신비의 10% (3턴)", f:{multi:15}, max:10, cap:150, unit:"스택"}
 ],k:[
   {n:"Flourish", b:11, h:1, c:2, cd:6, e:"자연", s:[["ARC",60],["SPD",80]]},
-  {n:"Perennial Canopy", b:4, h:1, c:2, cd:7, e:"자연", s:[["ARC",70],["SPD",100]]},
-  {n:"Stinger", b:5, h:1, c:2, cd:4, e:"독", s:[["ARC",70],["SPD",100]], x:"광역 10 별도"},
+  {n:"Perennial Canopy", b:4, h:1, c:2, cd:7, e:"자연", s:[["ARC",70],["SPD",80]]},
+  {n:"Stinger", b:5, h:1, c:2, cd:4, e:"독", s:[["ARC",70],["SPD",80]], x:"광역 10 별도"},
   {n:"Enrichment (버프)", b:0, h:1, c:1, cd:5, e:"자연", s:[["ARC",0]]}
 ]},
 "로그 (중립·단검)":{p:[
@@ -967,14 +982,14 @@ const CLASSES = {
   {n:"Shadow Form 다음 공격", note:"치명타 확률 +20", f:{crit:20}}
 ],k:[
   {n:"Stealth Strike", b:10, h:1, c:2, cd:6, e:"물리", s:[["STR",75]]},
-  {n:"Poison Fan", b:3.5, h:4, c:2, cd:5, e:"독", s:[["STR",200],["ARC",80],["LCK",100]]},
+  {n:"Poison Fan", b:3.5, h:4, c:2, cd:5, e:"독", s:[["STR",75],["ARC",80]], x:"행운 계수 삭제"},
   {n:"Shadow Form (버프)", b:0, h:1, c:1, cd:7, e:"어둠", s:[]}
 ]},
 "라이온하트 (중립·도끼)":{p:[
   {n:"용기 스택", note:"스택당 +1.75%, 최대 40", f:{multi:1.75}, max:40, unit:"스택"}
 ],k:[
   {n:"Daybreak", b:12, h:1, c:2, cd:6, e:"화염", s:[["STR",75]]},
-  {n:"Cauterisation (버프)", b:0, h:1, c:1, cd:5, e:"화염", s:[]},
+  {n:"Cauterisation (버프)", b:0, h:1, c:1, cd:5, e:"화염", s:[], x:"도발 1턴"},
   {n:"Benumb (버프)", b:0, h:1, c:2, cd:6, e:"화염", s:[]}
 ]},
 "시타델 (선·망치)":{p:[
@@ -982,23 +997,23 @@ const CLASSES = {
   {n:"Crucible 강화", note:"방어력 버프만큼 피해량 버프", f:{multi:40}}
 ],k:[
   {n:"Crucible", b:8, h:2, c:2, cd:4, e:"신성", s:[["STR",0]], x:"계수 분모 미표기"},
-  {n:"Blinding Vow (버프)", b:0, h:1, c:2, cd:7, e:"신성", s:[]},
-  {n:"Sanctified Protection (버프)", b:0, h:1, c:3, cd:8, e:"신성", s:[]}
+  {n:"Blinding Vow (버프)", b:0, h:1, c:2, cd:6, e:"신성", s:[]},
+  {n:"Sanctified Protection (버프)", b:0, h:1, c:3, cd:6, e:"신성", s:[], x:"더 이상 깨지지 않음"}
 ]},
 "아비터 (중립·망치)":{p:[
   {n:"Arbiter's Mantle", note:"스트라이크 기본 10 / 신비 150", f:{}}
 ],k:[
   {n:"Litigate", b:10, h:1, c:2, cd:4, e:"저주", s:[["ARC",90]]},
   {n:"Injunction", b:2, h:1, c:2, cd:6, e:"저주", s:[["ARC",185]], x:"강화 시 기본 5"},
-  {n:"Pronouncement", b:5, h:1, c:5, cd:8, e:"저주", s:[["ARC",85]], x:"카르마 보유 시 기본 25"}
+  {n:"Pronouncement", b:5, h:1, c:3, cd:8, e:"저주", s:[["ARC",85]], x:"카르마 보유 시 기본 25"}
 ]},
 "엘리멘탈리스트 (선·지팡이)":{p:[
   {n:"화염 디버프 대상", f:{multi:15}},
   {n:"마스터리 Element Mastery", note:"마법·화염·얼음·자연·신성·어둠 +15%", f:{multi:15}}
 ],k:[
-  {n:"Blaze", b:10, h:1, c:1, cd:5, e:"화염", s:[["ARC",70]]},
-  {n:"Lightning Crash", b:16, h:1, c:3, cd:7, e:"마법", s:[["ARC",65]], x:"계수 분모 = 65 − 2.5 × 추가 소모 에너지"},
-  {n:"Gale Uplift", b:5, h:2, c:2, cd:12, e:"자연", s:[["ARC",75]]}
+  {n:"Blaze", b:10, h:1, c:1, cd:4, e:"화염", s:[["ARC",70]]},
+  {n:"Lightning Crash", b:20, h:1, c:3, cd:8, e:"마법", s:[["ARC",65]], x:"계수 분모 = 65 − 2.5 × 추가 소모 에너지 · 에너지 6 이상 쓰면 기절 확정"},
+  {n:"Gale Uplift", b:7, h:2, c:2, cd:10, e:"자연", s:[["ARC",75]]}
 ]},
 "헥서 (중립·지팡이)":{p:[],k:[
   {n:"Dark Glare", b:11, h:1, c:2, cd:4, e:"어둠", s:[["ARC",75]]},
@@ -1014,7 +1029,7 @@ const CLASSES = {
   {n:"Call Skeleton (소환)", b:0, h:1, c:1, cd:8, e:"어둠", s:[["ARC",4]]},
   {n:"└ Smack", b:9, h:1, c:0, cd:0, e:"물리", s:[["ARC",50]]},
   {n:"└ Bone Spray", b:20, h:1, c:2, cd:4, e:"물리", s:[["ARC",50]]},
-  {n:"Raise Dead", b:0, h:1, c:3, cd:16, e:"어둠", s:[]}
+  {n:"Raise Dead", b:0, h:1, c:3, cd:16, e:"어둠", s:[], x:"이번 전투에서 죽은 수만큼 스켈레톤 추가 소환 · 스켈레톤 체력 절반"}
 ]}
 };
 
@@ -1179,8 +1194,8 @@ const SKILL_EXTRA = {
 "Impaling Strike":       {deb:[["출혈",2]]},
 "Flowing Dance":         {sp:[["Unending Flow 연속 스택", {multi:5}]]},
 "Light Burst":           {sp:[["마스터리 강화 +30%", {multi:30}]]},
-"Discharge":             {deb:[["기절",1]]},
-"Empowered Piercer":     {sp:[["충전 최대치 +38%", {multi:38}]]},
+"Discharge":             {sp:[["치명타 시 기절", {}]]},
+"Empowered Piercer":     {always:{critDmg:50}, sp:[["충전 최대치 +38%", {multi:38}],["치명타 시 피해 +50% (자동 적용)", {}]]},
 "Rending Barrage":       {deb:[["출혈",3]], sp:[["대상 출혈 상태 · 추가타 13.5", {flat:13.5}]]},
 "Bloody Burst":          {deb:[["출혈",2]]},
 "Blood Eruption":        {sp:[["마스터리 강화 · 주고받는 피해 +20%", {multi:20}]]},
@@ -1197,7 +1212,7 @@ const SKILL_EXTRA = {
 "Injunction":            {sp:[["강화 · 기본 피해량 5", {}]]},
 "Pronouncement":         {sp:[["대상 카르마 보유 · 기본 25", {}]]},
 "Blaze":                 {deb:[["화상",4]], sp:[["대상 화상 상태 +15%", {multi:15}]]},
-"Lightning Crash":       {deb:[["기절",1]], sp:[["추가 에너지 1당 계수 분모 −2.5", {}]]},
+"Lightning Crash":       {sp:[["추가 에너지 1당 계수 분모 −2.5", {}],["에너지 6 이상 → 기절 확정", {}]]},
 "Gale Uplift":           {deb:[["구속",2]]},
 "Dark Glare":            {deb:[["저주",3]]},
 "Inverse Abyss":         {deb:[["분열",3]]},
@@ -1208,7 +1223,7 @@ const SKILL_EXTRA = {
 "[서브] The Right Angle":{deb:[["구속",4]]},
 "코니수라 (Conisura)":    {sp:[["대상 디버프 종류당 기본 +3 (헥스는 개당 +6)", {}]]},
 "[종족] 서리바람":        {deb:[["취약",2],["약화",2],["추위",2]]},
-"[종족] 내면의 한기":      {deb:[["취약",1],["추위",4]], sp:[["헤비 스턴 2턴 후 발동", {}]]},
+"[종족] 내면의 한기":      {deb:[["취약",1],["추위",4]], sp:[["헤비 스턴 1턴 후 발동", {}]]},
 "[종족] 영혼 불꽃":        {deb:[["유령 불꽃",3]]},
 "[종족] 생기 없는 해골":    {deb:[["유령 불꽃",2]]},
 "[종족] 인페르노 리프트":   {deb:[["분열",2],["화상",3]]},
@@ -1234,8 +1249,8 @@ const DEBUFFS = {
 "화상":     {stk:true,  dot:0.7, d:"턴당 최대 체력 0.7%/스택"},
 "유령 불꽃":{stk:true,  dot:3.85,d:"턴당 최대 체력 3.85%"},
 "출혈":     {dur:true,  dot:3,   d:"행동 시 최대 체력 3%"},
-"중독":     {stk:true,  dotFlat:1, d:"턴당 스택당 1"},
-"저주":     {stk:true,  d:"인커밍·아웃고잉 힐 −20%/스택"},
+"중독":     {stk:true,  dotFlat:1, d:"턴당 스택당 1 · 매 턴 스택의 20% 감소"},
+"저주":     {dur:true,  d:"인커밍·아웃고잉 힐 절반"},
 "실명":     {dur:true,  d:"막기·회피 바 축소"},
 "구속":     {dur:true,  d:"탈출 차단 · 막기/회피 삭제"},
 "기절":     {dur:true,  d:"턴 스킵"},
@@ -1299,9 +1314,9 @@ const RACE_SK = {
   {n:"[종족] 마력 저주 증폭", note:"마법·저주 스킬 +10%", f:{multi:10}},
   {n:"[종족] 정령의 소환사 (20레벨)", note:"소환수 체력 1.5배", f:{}}],
  k:[{n:"[종족] 실프 소환", b:0,h:1,c:2,cd:7,e:"마법",s:[["STR",8],["ARC",8]],x:"체력 35 실프 소환"},
-    {n:"[종족] 영혼 각성 (버프)", b:0,h:1,c:4,cd:18,e:"마법",s:[],x:"전 스탯 +15%, 소환수 공격력 +50% · 종료 시 헤비 스턴 2 + 최대 체력 25% 자해"},
+    {n:"[종족] 영혼 각성 (버프)", b:0,h:1,c:4,cd:18,e:"마법",s:[],x:"전 스탯 +15%, 소환수 공격력 +50% · 종료 시 최대 체력 25% 자해 (기절 삭제)"},
     {n:"[종족] └ 윈드 볼트", b:5,h:1,c:0,cd:0,e:"자연",s:[]},
-    {n:"[종족] └ 게일 펄스", b:7,h:1,c:2,cd:6,e:"자연",s:[]}]},
+    {n:"[종족] └ 게일 펄스", b:10,h:1,c:2,cd:6,e:"자연",s:[]}]},
 
 "베네리 (6%)":{p:[
   {n:"[종족] 리치맨", note:"골드 최대치면 피해량 +20%", f:{multi:20}},
@@ -1316,7 +1331,7 @@ const RACE_SK = {
     {n:"[종족] 피의 파편", b:1.2,h:5,c:3,cd:7,e:"마법",s:[["STR",0],["ARC",0]],x:"입힌 만큼 회복 · 취약 대상이면 출혈 3턴 · 계수 분모 미표기"}]},
 
 "오피마르 (6%)":{p:[],
- k:[{n:"[종족] 검은 혀", b:0,h:1,c:0,cd:10,e:"독",s:[],x:"다음 턴 공격에 Blacktongue 부여"}]},
+ k:[{n:"[종족] 검은 혀", b:0,h:1,c:0,cd:10,e:"독",s:[],x:"다음 턴 공격에 Blacktongue 3턴 부여"}]},
 
 "다미노스 (3%)":{p:[
   {n:"[종족] 회복량 증폭", note:"아웃고잉 힐링 +15%", f:{}}],
@@ -1347,22 +1362,24 @@ const RACE_SK = {
     {n:"[종족] 생기 없는 해골", b:13,h:1,c:2,cd:5,e:"화염",s:[["STR",80],["ARC",80]],x:"확률로 유령 불꽃 2턴"}]},
 
 "바이디어 (1%)":{p:[
-  {n:"[종족] 유연공", note:"회피 시 확률로 에너지", f:{}}],
- k:[{n:"[종족] 감각 확장", b:0,h:1,c:1,cd:3,e:"물리",s:[],x:"감각 스택 3"},
+  {n:"[종족] 유연공", note:"회피 시 확률로 에너지", f:{}},
+  {n:"[종족] 감각", note:"회피 시 감각 1 (턴당 1회) · 감각 4 이상에서 맞으면 4 소모하고 자동 회피", f:{}},
+  {n:"[종족] 영혼 반전 술식 버프", note:"소모한 감각 1당 아군 피해량 +10% · 자동 회피", f:{multi:10}, max:10, unit:"감각"}],
+ k:[{n:"[종족] 감각 확장", b:0,h:1,c:1,cd:3,e:"물리",s:[],x:"3턴간 회피 시 감각 추가 획득"},
     {n:"[종족] 마음을 뚫는 눈", b:0,h:1,c:2,cd:7,e:"물리",s:[],x:"받는 공격 기본 피해의 절반 반사"},
-    {n:"[종족] 영혼 반전 술식", b:0,h:1,c:3,cd:10,e:"물리",s:[],x:"감각 스택 비례 버프 · 2턴 파티 무적"}]},
+    {n:"[종족] 영혼 반전 술식", b:0,h:1,c:3,cd:10,e:"물리",s:[],x:"감각 전부 소모 · 다음 턴까지 아군 피해량 +10×감각% · 자동 회피"}]},
 
 "보레아스 (1%)":{p:[
-  {n:"[종족] 추위의 빙각", note:"얼음 스킬당 아이스블러드 1 (스택당 +20%, 최대 200%)", f:{multi:20}, max:10, unit:"스택"}],
+  {n:"[종족] 추위의 빙각", note:"얼음 스킬당 아이스블러드 1 · 스택당 +10% (최대 50%), 피해 경감 4% (최대 20%) · 물리·마법 스킬이 얼음으로 바뀜", f:{multi:10}, max:5, unit:"스택"}],
  k:[{n:"[종족] 서리바람", b:9,h:1,c:1,cd:4,e:"얼음",s:[["STR",60],["ARC",60]],x:"전체 · 취약·약화·추위 2턴"},
-    {n:"[종족] 내면의 한기", b:21,h:1,c:2,cd:12,e:"얼음",s:[["STR",60],["ARC",60]],x:"자신 헤비 스턴 2턴 후 광역 · 취약 1턴, 추위 4턴"}]},
+    {n:"[종족] 내면의 한기", b:21,h:1,c:2,cd:12,e:"얼음",s:[["STR",60],["ARC",60]],x:"자신 헤비 스턴 1턴 후 광역 · 취약 1턴, 추위 4턴"}]},
 
 "렌텀":{p:[{n:"[종족] 점성 재생", note:"패시브 리젠 2", f:{}}],
  k:[{n:"[종족] 베인", b:7,h:1,c:1,cd:7,e:"독",s:[["STR",0],["ARC",0]],x:"주변까지 중독 · 계수 표기가 근력/신비"},
     {n:"[종족] 뮤실러지 (버프)", b:0,h:1,c:3,cd:12,e:"물리",s:[],x:"3턴 피해 감소 장벽"}]},
 
 "아모루스":{p:[{n:"[종족] Amorus (방어)", note:"P2 환산 +15%", f:{multi:15}}],
- k:[{n:"[종족] 불길한 시선", b:7,h:1,c:2,cd:7,e:"저주",s:[["STR",80],["ARC",80]],x:"자기 디버프 공유 · 적 버프 복사"},
+ k:[{n:"[종족] 불길한 시선", b:7,h:1,c:2,cd:12,e:"저주",s:[["STR",80],["ARC",80]],x:"자기 디버프 공유 · 적 버프 복사"},
     {n:"[종족] 쏟아지는 저주", b:15,h:1,c:4,cd:9,e:"저주",s:[["STR",80],["ARC",80]],x:"헥스 1 부여 · 주변 피해"}]},
 
 "그닉스":{p:[{n:"[종족] 타고난 기력", note:"명상 시 에너지 2", f:{}}],
@@ -1455,7 +1472,7 @@ function renderClassPassives(){
   box.style.marginTop = "12px";
   box.innerHTML = "<h3>클래스 · 서브 · 종족 패시브</h3>";
   c.p.forEach((it, ii) => {
-    if (!it.dyn && (!it.f || !Object.keys(it.f).length)) {
+    if (!it.dyn && !it.stp && (!it.f || !Object.keys(it.f).length)) {
       const p = document.createElement("div");
       p.className = "mrow off";
       p.innerHTML = '<span></span><span style="color:var(--ink-faint);font-size:12px">' + it.n +
@@ -1557,11 +1574,14 @@ function readRow(r, ctx){
     if (it.sim === "coag")     n = Math.min(it.max, ctx.turn);
     if (it.sim === "heat")     { n = Math.min(it.max, Math.floor(ctx.turn / 5)); on = n > 0; }
     if (it.sim === "medi")     on = ctx.afterMeditate;
+    if (it.sim === "blood")    { n = Math.min(it.max, ctx.blood || 0); on = n > 0; }
+    if (it.sim === "rage")     { n = Math.min(it.max, ctx.blood || 0); on = !!ctx.rage && n > 0; }
   }
 
-  const f = it.dyn ? it.dyn()
+  let f = it.dyn ? it.dyn()
           : it.opts ? it.opts[optIdx][1]
           : (tierSel && tierSel.value === "1" && it.t2) ? it.t2 : (it.f || {});
+  if (it.cap && f.multi && f.multi * n > it.cap) f = Object.assign({}, f, {multi: it.cap / n});
   const eff = Object.entries(f).map(([k,v]) =>
       k === "reducMul" ? "×" + Math.pow(v,n).toFixed(3)
     : k === "finalMul" ? "×" + v
@@ -1609,7 +1629,7 @@ function collectMods(ctx){
 const SOUL = [
 ["공격 트리", [
   {n:"Denature", d:"도트 대미지 +2%/랭크", r:5, c:[25,50,75,100,150], dot:2},
-  {n:"Critical Point", d:"치명타 피해량 +5%/랭크", r:5, c:[50,100,150,200,250], f:v=>({critDmg:5*v})},
+  {n:"Critical Point", d:"치명타 피해량 +2%/랭크", r:5, c:[50,100,150,200,250], f:v=>({critDmg:2*v})},
   {n:"Lil Bit Of Crit", d:"치명타 확률 +1%/랭크", r:5, c:[50,100,150,200,250], f:v=>({crit:1*v})},
   {n:"Strike First, No Mercy", d:"첫 공격 +5%/랭크 (2턴 뒤 소멸)", r:5, c:[100,200,300,400,500], f:v=>({multi:5*v}), sim:"first2"},
   {n:"Combat Focus", d:"명상 다음 턴 +2%/랭크", r:5, c:[50,100,150,200,250], f:v=>({multi:2*v}), sim:"medi"},
@@ -2081,8 +2101,22 @@ function armorState(){
   return {flat, pct, hp:a.hp || 0, hpPct:a.hpPct || 0, name:$("armor").value};
 }
 
-let CACHE = {cp:null, mk:{pct:{STR:0,ARC:0,END:0,SPD:0,LCK:0}, tiers:{}, edo:""}, ch:{base:{STR:0,ARC:0,END:0,SPD:0,LCK:0}, budget:150, used:0, lv:50}, gs:{STR:0,ARC:0,END:0,SPD:0,LCK:0}, soul:null, party:null, weapon:null, ar:{flat:{STR:0,ARC:0,END:0,SPD:0,LCK:0}, pct:{STR:0,ARC:0,END:0,SPD:0,LCK:0}}, mb:{STR:0,ARC:0,END:0,SPD:0,LCK:0}};
+let CACHE = {stp:{STR:0,ARC:0,END:0,SPD:0,LCK:0}, cp:null, mk:{pct:{STR:0,ARC:0,END:0,SPD:0,LCK:0}, tiers:{}, edo:""}, ch:{base:{STR:0,ARC:0,END:0,SPD:0,LCK:0}, budget:150, used:0, lv:50}, gs:{STR:0,ARC:0,END:0,SPD:0,LCK:0}, soul:null, party:null, weapon:null, ar:{flat:{STR:0,ARC:0,END:0,SPD:0,LCK:0}, pct:{STR:0,ARC:0,END:0,SPD:0,LCK:0}}, mb:{STR:0,ARC:0,END:0,SPD:0,LCK:0}};
+function stpState(){
+  const b = {STR:0, ARC:0, END:0, SPD:0, LCK:0};
+  rowsOf.concat(clsRows, spRows).forEach(r => {
+    if (!r.item.stp) return;
+    const on = r.tile ? r.el.getAttribute("aria-pressed") === "true"
+                      : (r.el.querySelector("input[type=checkbox]") || {}).checked;
+    if (!on) return;
+    const stk = r.el.querySelector(".stk");
+    const n = stk ? Math.max(1, parseInt(stk.value) || 1) : 1;
+    for (const [k,v] of Object.entries(r.item.stp)) b[k] += v * n;
+  });
+  return b;
+}
 function refreshCache(){
+  CACHE.stp = stpState();
   CACHE.mk = markState();
   CACHE.cp = cpState();
   CACHE.ch = charState();
@@ -2094,7 +2128,20 @@ function refreshCache(){
   CACHE.ar = armorState();
 }
 function MB(){ return CACHE.mb; }
-function SV(k){ return (CACHE.ch.base[k] + num(k) + CACHE.gs[k] + CACHE.mb[k] + CACHE.ar.flat[k]) * (1 + (CACHE.ar.pct[k] + CACHE.mk.pct[k]) / 100); }
+/* 역산용: 배분 포인트만 바꿔 끼운 최종 스탯 */
+function SVs(stats, k){
+  return (CACHE.ch.base[k] + stats[k] + CACHE.gs[k] + CACHE.mb[k] + CACHE.ar.flat[k]) *
+         (1 + (CACHE.ar.pct[k] + CACHE.mk.pct[k] + CACHE.stp[k]) / 100);
+}
+/* 110 마일스톤 (09-16): 근력 → 근접 피해 +20%, 신비 → 원거리 피해 +20% */
+function msBonus(strV, arcV){
+  const range = $("atkRange") ? $("atkRange").value : "melee";
+  return (range === "melee" && strV >= 110) || (range === "ranged" && arcV >= 110) ? 20 : 0;
+}
+/* 스킬 고유의 상시 효과 (예: Empowered Piercer 치명타 +50%) */
+function alwaysOf(name){ const ex = SKILL_EXTRA[name]; return ex && ex.always ? Object.assign(EMPTY(), ex.always) : EMPTY(); }
+function selectedSkillName(){ const i = $("skill").value; return i === "" ? "" : (skillPool()[+i] || {}).n || ""; }
+function SV(k){ return (CACHE.ch.base[k] + num(k) + CACHE.gs[k] + CACHE.mb[k] + CACHE.ar.flat[k]) * (1 + (CACHE.ar.pct[k] + CACHE.mk.pct[k] + CACHE.stp[k]) / 100); }
 
 /* ══════════ 4-b. 파티 ══════════ */
 const PARTY_BUFFS = [
@@ -2185,7 +2232,7 @@ function resolve(M, over){
   const base = over && over.base !== undefined ? over.base : num("base");
   const sc = over && over.scale !== undefined ? over.scale : scaleMul().mul;
   const scaled = base * sc;
-  const multi = 1 + (num("multi") + M.multi) / 100;
+  const multi = 1 + (num("multi") + M.multi + msBonus(SV("STR"), SV("ARC"))) / 100;
   const aff = (M.affSet !== null ? M.affSet : num("aff")) * M.affMul;
   const beforeDR = (scaled + num("flat") + M.flat - num("dflat")) * multi * aff * M.finalMul;
   const R = (num("reduc") + M.reduc) * M.reducMul;
@@ -2246,6 +2293,7 @@ function runSim(){
   if (num("dotPoison")) deb["중독"] = num("dotPoison");
   if (+$("dotBleed").value) deb["출혈"] = 99;
   let nrg = 1, combo = 0, total = 0, cds = {}, afterMeditate = false, last = null, hp = hp0, killTurn = 0;
+  let blood = 0, rage = false;   // 버서커 (09-16 리워크)
   // ── 내 쪽 상태 ──
   const myMax = num("myHP") > 0 ? num("myHP") : 100 + SV("END") + CACHE.ar.hp + Math.round(CACHE.ar.hpPct);
   const guardCut = Math.min(0.9, 0.5 + SV("STR") * 0.001);   // 50% + 근력의 10%
@@ -2279,6 +2327,7 @@ function runSim(){
   });
   const tickDeb = () => { for (const n of Object.keys(deb)){
     if (DEBUFFS[n] && !DEBUFFS[n].stk && deb[n] < 90) deb[n] = Math.max(0, deb[n] - 1);
+    if (n === "중독") deb[n] = Math.max(0, deb[n] - Math.max(1, Math.ceil(deb[n] * 0.2)));
     if (!deb[n]) delete deb[n];
   }};
 
@@ -2299,6 +2348,7 @@ function runSim(){
     const act = row.querySelector(".act").value;
     row.querySelector(".tn").textContent = "T" + turn;
     let dmg = 0, st = "", bad = false, guarded = false;
+    if (!rage) blood = 0;                       // 분노가 아니면 Bloodlust 는 매 턴 사라진다
 
     if (act === "명상"){ nrg += 2; combo = 0; st = "명상 · NRG " + nrg; afterMeditate = true; }
     else if (act === "포션"){ combo = 0; myHp = Math.min(myMax, myHp + num("potHeal"));
@@ -2319,6 +2369,8 @@ function runSim(){
       else if (cds[sk.n] > 0){ bad = true; st = "⚠ 쿨타임 " + cds[sk.n] + "턴"; combo = 0; afterMeditate = false; }
       else {
         nrg -= sk.c; cds[sk.n] = sk.cd; combo++;
+        if (/Rage Empower/.test(sk.n)) rage = !rage;
+        if (sk.b > 0) blood++;                  // 공격하면 Bloodlust +1
         // ── 블라스페미 노치 ──
         let notchAcc = EMPTY(), notchNote = "";
         const blas = corr === "blas" && ignited;
@@ -2348,9 +2400,9 @@ function runSim(){
         const DA = debAccOf();
         const SH = shardState({hpPct: hp / hp0 * 100,
                     debTgt: Object.values(deb).filter(v => v > 0).length});
-        let M = mergeAcc(mergeAcc(mergeAcc(mergeAcc(mergeAcc(collectMods({turn, combo, afterMeditate, noCP: cpAcc === null}), P.acc),
+        let M = mergeAcc(mergeAcc(mergeAcc(mergeAcc(mergeAcc(collectMods({turn, combo, afterMeditate, noCP: cpAcc === null, blood, rage}), P.acc),
                     soulState({turn, afterMeditate}).acc), WA), DA.a), SH);
-        M = mergeAcc(M, notchAcc);
+        M = mergeAcc(mergeAcc(M, notchAcc), alwaysOf(sk.n));
         const sc = sk.s.length ? 1 + sk.s.reduce((a,[st2,d]) => a + (d > 0 ? SV(st2)/d : 0), 0) : scaleMul().mul;
         let base = sk.b, extraNote = "";
         if (sk.consumeDeb){                       // 코니수라
@@ -2377,6 +2429,8 @@ function runSim(){
     if (extra > 0) st += (st ? " · " : "") + "도트·파티 +" + fmt(extra);
     const taken = guarded ? inc * (1 - guardCut) : inc;
     myHp -= taken;
+    if (taken > 0) blood++;                     // 피격해도 Bloodlust +1
+    if (blood || rage) st += " · 블러드러스트 " + blood + (rage ? " (분노)" : "");
     if (myHp <= 0 && !died){ died = turn; }
     const dtx = debText();
     if (dtx) st += " · [" + dtx + "]";
@@ -2410,7 +2464,10 @@ function calc(){
   refreshCache();
   const SO = soulState();
   const PA = partyAcc();
-  const M = mergeAcc(mergeAcc(mergeAcc(collectMods(null), PA.acc), SO.acc), mergeAcc(weaponState().acc, shardState(null)));
+  const M = mergeAcc(mergeAcc(mergeAcc(mergeAcc(collectMods(null), PA.acc), SO.acc), mergeAcc(weaponState().acc, shardState(null))),
+                    alwaysOf(selectedSkillName()));
+  const ms = msBonus(SV("STR"), SV("ARC"));
+  if (ms) SO.lines.push([($("atkRange").value === "melee" ? "근력" : "신비") + " 110 마일스톤", "+20%"]);
   const extra = SO.lines.map(([a,b]) => ["소울 · " + a, b])
     .concat(PA.lines.map(([a]) => ["파티 · " + a, ""]));
   if (extra.length) $("bd").insertAdjacentHTML("beforeend",
@@ -2831,7 +2888,7 @@ function statScale(stats){
   scalers.querySelectorAll(".scalerow").forEach(r => {
     const st = r.querySelector(".sStat").value;
     const d = parseFloat(r.querySelector(".sDiv").value) || 0;
-    if (d > 0) s += ((CACHE.ch.base[st] + stats[st] + CACHE.gs[st] + MBC[st] + CACHE.ar.flat[st]) * (1 + (CACHE.ar.pct[st] + CACHE.mk.pct[st]) / 100)) / d;
+    if (d > 0) s += SVs(stats, st) / d;
   });
   return 1 + s;
 }
@@ -2849,17 +2906,17 @@ function accOf(list){
   return a;
 }
 function dmgWith(acc0, stats){
-  const acc = mergeAcc(mergeAcc(acc0, mergeAcc(CACHE.soul || EMPTY(), CACHE.party || EMPTY())), CACHE.weapon || EMPTY());
+  const acc = mergeAcc(mergeAcc(mergeAcc(acc0, mergeAcc(CACHE.soul || EMPTY(), CACHE.party || EMPTY())), CACHE.weapon || EMPTY()), alwaysOf(selectedSkillName()));
   const hits = Math.max(1, Math.round(num("hits")));
   const scaled = num("base") * statScale(stats);
-  const multi = 1 + (num("multi") + acc.multi) / 100;
+  const multi = 1 + (num("multi") + acc.multi + msBonus(SVs(stats,"STR"), SVs(stats,"ARC"))) / 100;
   const aff = (acc.affSet !== null ? acc.affSet : num("aff")) * acc.affMul;
   const beforeDR = (scaled + num("flat") + acc.flat - num("dflat")) * multi * aff * acc.finalMul;
   const R = (num("reduc") + acc.reduc) * acc.reducMul;
   const dr = R >= 0 ? 100/(100+R) : Math.min(2, 2 - 100/(100+Math.abs(R)));
   const after = beforeDR * dr;
   const t = (num("trueFlat") + acc.trueFlat) * num("truedr") * (1 + num("trueMulti")/100);
-  const SL = (CACHE.ch.base.LCK + stats.LCK + CACHE.gs.LCK + MB().LCK + CACHE.ar.flat.LCK) * (1 + (CACHE.ar.pct.LCK + CACHE.mk.pct.LCK) / 100);
+  const SL = SVs(stats, "LCK");
   const c = Math.max(0, SL * LCKM() + num("critAdd") + acc.crit) / 100;
   const n = Math.floor(c), f = c - n;
   const bonus = (SL >= 25 ? 1.10 : 1) + acc.critDmg / 100;
@@ -3277,6 +3334,10 @@ $("sub").addEventListener("change", () => { fillSkills(); renderClassPassives();
 // 마크 티어를 올리면 그 티어의 스킬이 목록에 바로 붙어야 한다
 $("markTiers").addEventListener("change", () => { fillSkills(); refreshActions(); calc(); });
 $("race").addEventListener("change", () => { fillSkills(); renderClassPassives(); refreshActions(); calc(); });
+$("tgtPreset").addEventListener("change", () => {
+  const v = $("tgtPreset").value; if (!v) return;
+  const [hp, type] = v.split("|"); $("tgtHP").value = hp; $("tgtType").value = type; calc();
+});
 $("skill").addEventListener("change", () => {
   const i = $("skill").value;
   if (i === ""){ $("skillSp").innerHTML = ""; spRows = []; $("skillInfo").textContent = "베이스 클래스는 상위 슈퍼 클래스의 스킬을 그대로 따릅니다."; return; }
