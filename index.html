@@ -930,7 +930,7 @@ const CLASSES = {
   {n:"마스터리 The Big Sword", note:"스트라이크 +40%", f:{multi:40}}
 ],k:[
   {n:"Head Splitter", b:16, h:1, c:2, cd:5, e:"물리", s:[["STR",50]]},
-  {n:"Carnage", b:1, h:20, c:3, cd:7, e:"어둠", s:[["STR",100]], x:"추가 소모 에너지 1당 +20%, 최대 +100%"},
+  {n:"Carnage", b:1.75, h:10, c:3, cd:7, e:"어둠", s:[["STR",100]], x:"히트당 기본 = 1.75 + 0.4 × 추가 소모 에너지 (6에너지면 2.95) · 10타"},
   {n:"Rage Empower (버프)", b:0, h:1, c:1, cd:5, e:"물리", s:[], x:"분노 켜기/끄기 — 분노 중엔 Bloodlust가 사라지지 않음"}
 ]},
 "세인트 (선·창)":{p:[
@@ -1190,7 +1190,7 @@ const SKILL_EXTRA = {
 "Dark Smite":            {deb:[["약화",2]]},
 "Darkcore Eruption":     {sp:[["소모한 다크 코어 1개당 +5%", {multi:5}]]},
 "Head Splitter":         {deb:[["취약",2]], sp:[["공격 후 피해량 +10% 획득", {multi:10}]]},
-"Carnage":               {sp:[["추가 소모 에너지 1당 +20% (최대 100%)", {multi:20}]]},
+"Carnage":               {sp:[["추가 소모 에너지 1당 히트당 기본 +0.4 (기본 칸에 직접 입력)", {}]]},
 "Impaling Strike":       {deb:[["출혈",2]]},
 "Flowing Dance":         {sp:[["Unending Flow 연속 스택", {multi:5}]]},
 "Light Burst":           {sp:[["마스터리 강화 +30%", {multi:30}]]},
