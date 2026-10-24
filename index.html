@@ -405,6 +405,13 @@
     <div id="clsPassives"></div>
   </fieldset>
   <fieldset>
+    <legend>갑옷</legend>
+    <div class="grid c2"><label><span class="k">갑옷</span><select id="armor"></select></label></div>
+    <div class="mrow" style="grid-template-columns:1fr auto"><span class="nm" id="armorOut">—</span></div>
+    <p class="hint">갑옷의 <b>스탯 +N / +N%</b>는 「내 스탯」 위에 얹혀 계수와 치명타에 바로 들어가고, 체력·속성별 디펜스는 표시만 합니다.
+      힘 빌드는 <b>방랑하는 수련가</b>(근력 +10%), 신비 빌드는 <b>죽음의 망토</b>(신비 +10%)가 가장 높습니다.</p>
+  </fieldset>
+  <fieldset>
     <legend>스킬 수치</legend>
     <div class="grid c3">
       <label><span class="k">기본 피해량 <span class="en">Base</span></span><input type="number" id="base" value="5" step="0.1"></label>
@@ -490,11 +497,6 @@
     <div id="racePassives"></div>
     <p class="hint">종족 기본 스탯은 「스탯」 탭의 기본 스탯에 들어가고, 종족 액티브 스킬은 스킬 목록에 <b>[종족]</b>으로 붙습니다.</p>
   </fieldset>
-  <fieldset>
-    <legend>종족 보정 · 대상 종족</legend>
-    <div id="mods_race"></div>
-    <p class="hint">대상 종족(아모루스·렌텀 등 방어 쪽)은 상대가 그 종족일 때 켜세요.</p>
-  </fieldset>
 </div>
 <div class="tabpane" data-p="status" hidden>
   <fieldset>
@@ -561,17 +563,14 @@
     <p class="capmsg" id="cap_ench"></p>
   </fieldset>
   <fieldset>
-    <legend>무기 · 갑옷</legend>
-    <div class="grid c3">
+    <legend>무기</legend>
+    <div class="grid c2">
       <label><span class="k">무기</span><select id="weap"></select></label>
       <label id="weapStkWrap" hidden><span class="k"><span id="weapStkLbl">스택</span></span>
         <input type="number" id="weapStk" value="0" min="0" step="1"></label>
-      <label><span class="k">갑옷</span><select id="armor"></select></label>
     </div>
     <div class="mrow" style="grid-template-columns:1fr auto"><span class="nm" id="weapOut">—</span></div>
-    <div class="mrow" style="grid-template-columns:1fr auto"><span class="nm" id="armorOut">—</span></div>
-    <p class="hint">무기는 계열 효과만 반영합니다 (같은 계열이면 검·창·지팡이 상관없이 같은 효과).
-      갑옷의 <b>스탯 +N / +N%</b>는 「내 스탯」 위에 얹혀 계수와 치명타에 바로 들어가고, 체력·속성별 디펜스는 표시만 합니다.</p>
+    <p class="hint">무기는 계열 효과만 반영합니다 (같은 계열이면 검·창·지팡이 상관없이 같은 효과). 갑옷은 「클래스 · 스킬」 탭에 있습니다.</p>
   </fieldset>
 
   <fieldset>
@@ -937,15 +936,6 @@ const MODS = [
   {n:"저주 아귀 (Cursemaw)", note:"스택당 방어 −5%", f:{reducMul:0.95}, max:10, unit:"스택"},
   {n:"명상 반동", note:"포커스드 마인드 · 받는 피해 +15%", f:{multi:15}},
   {n:"헌티드 (Haunted)", note:"스택당 받는 피해 +3%, 최대 5 (레이스 인챈트)", f:{multi:3}, max:5, unit:"스택"}
-]},
-{g:"종족", items:[
-  {n:"Inferion (공격, 화상 보유)", f:{multi:20}},
-  {n:"Boreas (공격)", note:"아이스블러드 스택당 +7%, 최대 35% · 내 종족이 보레아스면 종족 패시브 쪽을 쓰세요", f:{multi:7}, max:5, unit:"스택"},
-  {n:"Corvolus (마법·신성)", note:"패치노트 기재 부호 반전 버그", f:{multi:-10}},
-  {n:"Inferion (대상 방어, 화상)", f:{reduc:17.65}},
-  {n:"Boreas (대상 방어) 7스택", note:"실질 약 35% 감소", f:{reduc:53.85}},
-  {n:"Amorus (대상 방어)", f:{multi:15}},
-  {n:"Lentum (대상 방어)", f:{multi:20}}
 ]},
 {g:"커럽션", items:[
   {n:"노치 소모", note:"소모 1스택당 +10%", f:{multi:10}, max:3, unit:"스택"},
@@ -1630,6 +1620,8 @@ MODS.forEach(grp => {
       });
       b.dataset.rg = grp.key === "gear" ? (RG_OF[it.n] || "기타") : grp.key === "ench" ? "인챈트" : "유물";
       b.dataset.dmg = isDmgItem(it) ? "1" : "0";
+      b.dataset.rar = grp.key === "gear" ? RAR[RAR_OF[it.n] || "희귀"] : 0;
+      b.dataset.idx = grp.items.indexOf(it);
       b.dataset.q = it.n + " " + (it.note || "") + " " + b.dataset.rg;
       b.innerHTML = '<span class="tn">' + it.n + '</span>' + tileMeta(it, grp) +
         (it.note ? '<span class="tnote">' + it.note + '</span>' : "") +
@@ -1665,7 +1657,7 @@ MODS.forEach(grp => {
       box.appendChild(row);
       rowsOf.push({el:row, item:it, grp:grp, tile:false});
     });
-    $(({"기어 특성 (오브)":"mods_trait", "버프 · 디버프":"mods_status", "종족":"mods_race", "커럽션":"mods_corr"})[grp.g] || "mods_status").appendChild(box);
+    $(({"기어 특성 (오브)":"mods_trait", "버프 · 디버프":"mods_status", "커럽션":"mods_corr"})[grp.g] || "mods_status").appendChild(box);
   }
 });
 
@@ -3105,10 +3097,11 @@ function applyTileFilter(){
       const ok = (!qq || NORM(t.dataset.q).includes(qq)) && (rg === "전체" || t.dataset.rg === rg) &&
                  (!dmg || t.dataset.dmg === "1") && (!on || t.getAttribute("aria-pressed") === "true");
       t.style.display = ok ? "" : "none";
+      if (key === "gear") t.style.order = rg === "전체" ? (5 - (+t.dataset.rar)) * 1000 + (+t.dataset.idx) : +t.dataset.idx;
       if (ok && key === "gear") shown++;
     });
   });
-  $("gearShown").textContent = shown + "개 표시 · ◆ 딜 = 피해량 계산에 실제로 들어가는 기어 · 나머지는 회복·방어·유틸이라 표시만";
+  $("gearShown").textContent = shown + "개 표시" + (pick("gearChips") === "전체" ? " · 등급순 (전설 → 일반)" : "") + " · ◆ 딜 = 피해량 계산에 실제로 들어가는 기어 · 나머지는 회복·방어·유틸이라 표시만";
 }
 chipBar($("gearChips"), Object.keys(GEAR_REGION), "gear");
 ["gearSearch","gearDmgOnly","gearOnOnly","artDmgOnly","enchDmgOnly"].forEach(id => $(id).addEventListener("input", applyTileFilter));
