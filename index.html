@@ -210,7 +210,7 @@
   /* ── 탭 ── */
   .tabs{display:flex;gap:4px;margin-bottom:14px;flex-wrap:wrap;
     border-bottom:1px solid var(--line);padding-bottom:0}
-  .tab{font-family:"Noto Sans KR",sans-serif;font-size:12.5px;cursor:pointer;padding:7px 15px;
+  .tab{font-family:"Noto Sans KR",sans-serif;font-size:12.5px;cursor:pointer;padding:7px 12px;
     border:1px solid transparent;border-bottom:0;border-radius:3px 3px 0 0;margin-bottom:-1px;
     background:transparent;color:var(--ink-faint);display:flex;align-items:center;gap:6px}
   .tab:hover{color:var(--ink)}
@@ -360,14 +360,19 @@
 <!-- ───────── 가운데: 입력 ───────── -->
 <main>
 <div class="tabs" role="tablist">
-  <button type="button" class="tab" role="tab" data-t="build" aria-selected="true">빌드<span class="dot" hidden></span></button>
+  <button type="button" class="tab" role="tab" data-t="load" aria-selected="false">불러오기<span class="dot" hidden></span></button>
+  <button type="button" class="tab" role="tab" data-t="build" aria-selected="true">클래스 · 스킬<span class="dot" hidden></span></button>
+  <button type="button" class="tab" role="tab" data-t="stat" aria-selected="false">스탯<span class="dot" hidden></span></button>
+  <button type="button" class="tab" role="tab" data-t="race" aria-selected="false">종족<span class="dot" hidden></span></button>
   <button type="button" class="tab" role="tab" data-t="gear" aria-selected="false">기어<span class="dot" hidden></span></button>
+  <button type="button" class="tab" role="tab" data-t="status" aria-selected="false">상태이상<span class="dot" hidden></span></button>
+  <button type="button" class="tab" role="tab" data-t="corr" aria-selected="false">커럽션<span class="dot" hidden></span></button>
   <button type="button" class="tab" role="tab" data-t="soul" aria-selected="false">소울 · 마크<span class="dot" hidden></span></button>
   <button type="button" class="tab" role="tab" data-t="battle" aria-selected="false">전투 · 파티<span class="dot" hidden></span></button>
   <button type="button" class="tab" role="tab" data-t="sim" aria-selected="false">시뮬레이션<span class="dot" hidden></span></button>
   <button type="button" class="tab" role="tab" data-t="solve" aria-selected="false">역산<span class="dot" hidden></span></button>
 </div>
-<div class="tabpane" data-p="build">
+<div class="tabpane" data-p="load" hidden>
   <fieldset>
     <legend>빌드 불러오기</legend>
     <textarea id="buildText" rows="10" spellcheck="false"
@@ -387,7 +392,8 @@
       줄임말(토건·손가락·블펨·올 럭 …)과 오타도 이름 검색으로 최대한 맞춰 찾습니다.
       <code>or</code>로 여러 개를 적으면 앞의 것을 씁니다.</p>
   </fieldset>
-
+</div>
+<div class="tabpane" data-p="build">
   <fieldset>
     <legend>클래스 &amp; 스킬</legend>
     <div class="grid c3">
@@ -395,7 +401,7 @@
       <label><span class="k">서브 클래스 <span class="en">5레벨</span></span><select id="sub"></select></label>
       <label><span class="k">스킬</span><select id="skill"></select></label>
     </div>
-    <p class="hint" id="skillInfo">베이스 클래스는 상위 슈퍼 클래스의 스킬을 그대로 따릅니다. 서브 클래스 스킬은 목록에 <b>[서브]</b>로 붙습니다.</p>
+    <p class="hint" id="skillInfo">스킬 목록에는 슈퍼 클래스 스킬 뒤로 <b>[베이스]</b>(무기 계열로 자동) · <b>[서브]</b> · <b>[종족]</b> · <b>[기어]</b>(낀 기어가 주는 스킬)가 붙습니다.</p>
     <div id="clsPassives"></div>
   </fieldset>
   <fieldset>
@@ -422,10 +428,21 @@
     <p class="hint"><code>Base × (1 + Σ(스탯 ÷ 계수))</code> — 예) 근력 100, 계수 75 → ×2.333. 계수 분모가 트렐로에 없는 스킬은 0으로 들어오니 직접 채우세요.</p>
   </fieldset>
   <fieldset>
+    <legend>대미지 필드 <span class="cnt">· 직접 입력</span></legend>
+    <div class="grid c2">
+      <label><span class="k">고정 가감 <span class="en">Flat</span></span><input type="number" id="flat" value="0" step="1"></label>
+      <label><span class="k">피해 증가 합계 <span class="en">Multi %</span></span><input type="number" id="multi" value="0" step="1"></label>
+      <label><span class="k">트루 고정 피해 <span class="en">TrueFlat</span></span><input type="number" id="trueFlat" value="0" step="1"></label>
+      <label><span class="k">트루 배율 <span class="en">TrueMulti %</span></span><input type="number" id="trueMulti" value="0" step="1"></label>
+    </div>
+    <p class="hint">Multi는 <b>합연산</b>입니다. +10% 5개는 1.1⁵(1.61)이 아니라 <code>1.50</code>.</p>
+  </fieldset>
+</div>
+<div class="tabpane" data-p="stat" hidden>
+  <fieldset>
     <legend>캐릭터</legend>
-    <div class="grid c3">
+    <div class="grid c2">
       <label><span class="k">레벨</span><input type="number" id="lvl" value="50" min="1" max="60" step="1"></label>
-      <label><span class="k">종족</span><select id="race"></select></label>
       <label><span class="k">전 스탯 보너스</span>
         <select id="growth">
           <option value="10">P1 개편 · 10레벨마다 +1</option>
@@ -435,34 +452,6 @@
     <div class="mrow" style="grid-template-columns:1fr auto;margin-top:8px">
       <span class="nm" id="charOut">—</span><span class="eff" id="ptOut">—</span></div>
   </fieldset>
-
-  <fieldset>
-    <legend>커럽션 · 커럽트 파워</legend>
-    <div class="grid c3">
-      <label><span class="k">커럽션</span>
-        <select id="corr">
-          <option value="">— 없음 —</option>
-          <option value="blas">블라스페미 (노치)</option>
-          <option value="her">헤레시</option>
-          <option value="tyr">타이래니</option>
-        </select></label>
-      <label><span class="k">보유 커럽트 파워</span><input type="number" id="cpHave" value="0" min="0" step="5"></label>
-      <label style="flex-direction:row;align-items:center;gap:7px;grid-column:1/-1"><input type="checkbox" id="cpWorks" style="width:auto">
-        커럽트 파워 강화 적용 <span class="en">실측상 현재 미작동 · 켜면 강화는 첫 타에만 들어감</span></label>
-      <label><span class="k">노치 소모 스킬 <span class="en">코스트 3+</span></span>
-        <select id="notchUse">
-          <option value="auto">스킬 코스트로 자동 판정</option>
-          <option value="on">이 공격은 노치를 소모함</option>
-          <option value="off">노치를 소모하지 않음</option>
-        </select></label>
-    </div>
-    <div class="mrow" style="grid-template-columns:1fr auto;margin-top:8px">
-      <span class="nm" id="cpOut">—</span><span class="eff" id="cpNeed">—</span></div>
-    <p class="hint">블라스페미에서 <b>코스트 3 이상</b> 스킬은 노치 스택을 전부 소모하므로 그 공격에는 커럽트 파워를 쓸 수 없습니다.
-      커럽트 파워 강화는 트렐로 기준 <b>다음 한 타(첫 타)</b>에만 들어갑니다. 다단히트면 강화분이 타수로 나뉘어 평균에 반영됩니다.
-      실측(스트라이크 69.1 → 69.1)으로는 강화 자체가 작동하지 않아 기본은 꺼 두었습니다.</p>
-  </fieldset>
-
   <fieldset>
     <legend>스탯 배분 <span class="cnt" id="allocCnt">0/150</span></legend>
     <div class="grid c5">
@@ -493,29 +482,57 @@
       <label><span class="k">기본 + 추가 치명타 확률 <span class="en">기본 10</span></span><input type="number" id="critAdd" value="10" step="1"></label>
     </div>
   </fieldset>
+</div>
+<div class="tabpane" data-p="race" hidden>
   <fieldset>
-    <legend>특성 · 상황</legend>
-    <div id="mods"></div>
+    <legend>종족</legend>
+    <div class="grid c2"><label><span class="k">종족</span><select id="race"></select></label></div>
+    <div id="racePassives"></div>
+    <p class="hint">종족 기본 스탯은 「스탯」 탭의 기본 스탯에 들어가고, 종족 액티브 스킬은 스킬 목록에 <b>[종족]</b>으로 붙습니다.</p>
   </fieldset>
   <fieldset>
-    <legend>대미지 필드 <span class="cnt">· 직접 입력</span></legend>
-    <div class="grid c2">
-      <label><span class="k">고정 가감 <span class="en">Flat</span></span><input type="number" id="flat" value="0" step="1"></label>
-      <label><span class="k">피해 증가 합계 <span class="en">Multi %</span></span><input type="number" id="multi" value="0" step="1"></label>
-      <label><span class="k">트루 고정 피해 <span class="en">TrueFlat</span></span><input type="number" id="trueFlat" value="0" step="1"></label>
-      <label><span class="k">트루 배율 <span class="en">TrueMulti %</span></span><input type="number" id="trueMulti" value="0" step="1"></label>
+    <legend>종족 보정 · 대상 종족</legend>
+    <div id="mods_race"></div>
+    <p class="hint">대상 종족(아모루스·렌텀 등 방어 쪽)은 상대가 그 종족일 때 켜세요.</p>
+  </fieldset>
+</div>
+<div class="tabpane" data-p="status" hidden>
+  <fieldset>
+    <legend>상태이상 · 버프 · 디버프</legend>
+    <div id="mods_status"></div>
+    <p class="hint">대상에게 걸린 디버프(취약·골절·헥스·분열·헌티드 …)와 나에게 걸린 약화를 켭니다. 시뮬레이션에서는 스킬이 거는 디버프가 턴마다 자동으로 반영됩니다.</p>
+  </fieldset>
+</div>
+<div class="tabpane" data-p="corr" hidden>
+  <fieldset>
+    <legend>커럽션 · 커럽트 파워</legend>
+    <div class="grid c3">
+      <label><span class="k">커럽션</span>
+        <select id="corr">
+          <option value="">— 없음 —</option>
+          <option value="blas">블라스페미 (노치)</option>
+          <option value="her">헤레시</option>
+          <option value="tyr">타이래니</option>
+        </select></label>
+      <label><span class="k">보유 커럽트 파워</span><input type="number" id="cpHave" value="0" min="0" step="5"></label>
+      <label style="flex-direction:row;align-items:center;gap:7px;grid-column:1/-1"><input type="checkbox" id="cpWorks" style="width:auto">
+        커럽트 파워 강화 적용 <span class="en">실측상 현재 미작동 · 켜면 강화는 첫 타에만 들어감</span></label>
+      <label><span class="k">노치 소모 스킬 <span class="en">코스트 3+</span></span>
+        <select id="notchUse">
+          <option value="auto">스킬 코스트로 자동 판정</option>
+          <option value="on">이 공격은 노치를 소모함</option>
+          <option value="off">노치를 소모하지 않음</option>
+        </select></label>
     </div>
-    <p class="hint">Multi는 <b>합연산</b>입니다. +10% 5개는 1.1⁵(1.61)이 아니라 <code>1.50</code>.</p>
+    <div class="mrow" style="grid-template-columns:1fr auto;margin-top:8px">
+      <span class="nm" id="cpOut">—</span><span class="eff" id="cpNeed">—</span></div>
+    <p class="hint">블라스페미에서 <b>코스트 3 이상</b> 스킬은 노치 스택을 전부 소모하므로 그 공격에는 커럽트 파워를 쓸 수 없습니다.
+      커럽트 파워 강화는 트렐로 기준 <b>다음 한 타(첫 타)</b>에만 들어갑니다. 다단히트면 강화분이 타수로 나뉘어 평균에 반영됩니다.
+      실측(스트라이크 69.1 → 69.1)으로는 강화 자체가 작동하지 않아 기본은 꺼 두었습니다.</p>
   </fieldset>
   <fieldset>
-    <legend>대상 방어 필드 <span class="cnt">· 직접 입력</span></legend>
-    <div class="grid c2">
-      <label><span class="k">고정 감산 <span class="en">Defense.Flat</span></span><input type="number" id="dflat" value="0" step="1"></label>
-      <label><span class="k">피해 감소 수치 <span class="en">Reduc</span></span><input type="number" id="reduc" value="0" step="1"></label>
-      <label><span class="k">속성 상성 <span class="en">Affinity</span></span><input type="number" id="aff" value="1" step="0.05"></label>
-      <label><span class="k">트루 피해 감소 배율 <span class="en">TrueDR</span></span><input type="number" id="truedr" value="1" step="0.05"></label>
-    </div>
-    <p class="hint">Reduc은 퍼센트가 아닙니다. <code>100 → 50% 감소</code>, <code>300 → 75% 감소</code>. 음수면 증폭이며 최대 2배에서 멈춥니다.</p>
+    <legend>커럽션 상태</legend>
+    <div id="mods_corr"></div>
   </fieldset>
 </div>
 <div class="tabpane" data-p="gear" hidden>
@@ -572,6 +589,11 @@
     <legend>착용 중 기어 스탯</legend>
     <div id="gearStatOut" class="mrow" style="grid-template-columns:1fr"><span class="nm">—</span></div>
     <p class="hint">기어·유물의 <b>고정 스탯</b>만 반영합니다. 티어별 추가 스탯(T1~T6 랜덤 롤)은 스탯 배분 칸에 더하거나, 스탯창 값을 그대로 입력하세요.</p>
+  </fieldset>
+  <fieldset>
+    <legend>기어 특성 (오브)</legend>
+    <div id="mods_trait"></div>
+    <p class="hint">오브는 기어 4칸 × 1~2슬롯 + 유물 2슬롯, 최대 10개. 같은 특성 여러 개는 중첩됩니다 (개발 문서: 트레잇은 미테스트).</p>
   </fieldset>
 </div>
 <div class="tabpane" data-p="soul" hidden>
@@ -643,6 +665,16 @@
     <div id="party"></div>
     <p class="hint">파티원의 지원 효과는 내 Multi에 합산되고, 기여 피해량은 시뮬레이션 총합에 더해집니다.
       아래 「버프 · 디버프」에서 같은 항목을 또 켜면 이중 계산되니 하나만 쓰세요. 파티가 있으면 시비가 6단계까지 올라 적이 강해집니다.</p>
+  </fieldset>
+  <fieldset>
+    <legend>대상 방어 필드 <span class="cnt">· 직접 입력</span></legend>
+    <div class="grid c2">
+      <label><span class="k">고정 감산 <span class="en">Defense.Flat</span></span><input type="number" id="dflat" value="0" step="1"></label>
+      <label><span class="k">피해 감소 수치 <span class="en">Reduc</span></span><input type="number" id="reduc" value="0" step="1"></label>
+      <label><span class="k">속성 상성 <span class="en">Affinity</span></span><input type="number" id="aff" value="1" step="0.05"></label>
+      <label><span class="k">트루 피해 감소 배율 <span class="en">TrueDR</span></span><input type="number" id="truedr" value="1" step="0.05"></label>
+    </div>
+    <p class="hint">Reduc은 퍼센트가 아닙니다. <code>100 → 50% 감소</code>, <code>300 → 75% 감소</code>. 음수면 증폭이며 최대 2배에서 멈춥니다.</p>
   </fieldset>
 </div>
 <div class="tabpane" data-p="sim" hidden>
@@ -908,13 +940,12 @@ const MODS = [
 ]},
 {g:"종족", items:[
   {n:"Inferion (공격, 화상 보유)", f:{multi:20}},
-  {n:"Boreas (공격)", note:"아이스블러드 스택당 +7%, 최대 35%", f:{multi:7}, max:5, unit:"스택"},
+  {n:"Boreas (공격)", note:"아이스블러드 스택당 +7%, 최대 35% · 내 종족이 보레아스면 종족 패시브 쪽을 쓰세요", f:{multi:7}, max:5, unit:"스택"},
   {n:"Corvolus (마법·신성)", note:"패치노트 기재 부호 반전 버그", f:{multi:-10}},
   {n:"Inferion (대상 방어, 화상)", f:{reduc:17.65}},
   {n:"Boreas (대상 방어) 7스택", note:"실질 약 35% 감소", f:{reduc:53.85}},
   {n:"Amorus (대상 방어)", f:{multi:15}},
-  {n:"Lentum (대상 방어)", f:{multi:20}},
-  {n:"아이스블러드", note:"스택당 +7%, 최대 35% (트렐로 10-22)", f:{multi:7}, max:5, unit:"스택"}
+  {n:"Lentum (대상 방어)", f:{multi:20}}
 ]},
 {g:"커럽션", items:[
   {n:"노치 소모", note:"소모 1스택당 +10%", f:{multi:10}, max:3, unit:"스택"},
@@ -1495,7 +1526,7 @@ const RACE_SK = {
     {n:"[종족] 영혼 반전 술식", b:0,h:1,c:3,cd:10,e:"물리",s:[],x:"감각 전부 소모 · 다음 턴까지 아군 피해량 +10×감각% · 자동 회피"}]},
 
 "보레아스 (1%)":{p:[
-  {n:"[종족] 추위의 빙각", note:"얼음 스킬당 아이스블러드 1 · 스택당 +10% (최대 50%), 피해 경감 4% (최대 20%) · 물리·마법 스킬이 얼음으로 바뀜", f:{multi:10}, max:5, unit:"스택"}],
+  {n:"[종족] 추위의 빙각", note:"얼음 스킬당 아이스블러드 1 · 스택당 +7% (최대 35%), 피해 저항 4% · 물리·마법 스킬이 얼음으로 바뀜 · 다른 속성 쓰면 1 감소", f:{multi:7}, max:5, unit:"스택"}],
  k:[{n:"[종족] 서리바람", b:9,h:1,c:1,cd:4,e:"얼음",s:[["STR",60],["ARC",60]],x:"전체 · 취약·약화·추위 2턴"},
     {n:"[종족] 내면의 한기", b:21,h:1,c:2,cd:12,e:"얼음",s:[["STR",60],["ARC",60]],x:"자신 헤비 스턴 1턴 후 광역 · 취약 1턴, 추위 4턴"}]},
 
@@ -1634,40 +1665,42 @@ MODS.forEach(grp => {
       box.appendChild(row);
       rowsOf.push({el:row, item:it, grp:grp, tile:false});
     });
-    $("mods").appendChild(box);
+    $(({"기어 특성 (오브)":"mods_trait", "버프 · 디버프":"mods_status", "종족":"mods_race", "커럽션":"mods_corr"})[grp.g] || "mods_status").appendChild(box);
   }
 });
 
 /* 클래스 패시브는 선택된 클래스에 맞춰 동적으로 */
 let clsRows = [];
 function renderClassPassives(){
-  const host = $("clsPassives");
-  host.innerHTML = "";
   clsRows = [];
-  const c = {p: (CLASSES[$("cls").value] || {p:[]}).p.concat(baseOf().p, subOf().p, raceOf().p)};
-  if (!c.p.length) return;
-  const box = document.createElement("div");
-  box.className = "mgroup";
-  box.style.marginTop = "12px";
-  box.innerHTML = "<h3>클래스 · 베이스" + (baseOf().n ? " (" + baseOf().n + ")" : "") + " · 서브 · 종족 패시브</h3>";
-  c.p.forEach((it, ii) => {
-    if (!it.dyn && !it.stp && (!it.f || !Object.keys(it.f).length)) {
-      const p = document.createElement("div");
-      p.className = "mrow off";
-      p.innerHTML = '<span></span><span style="color:var(--ink-faint);font-size:12px">' + it.n +
-        (it.note ? ' — ' + it.note : "") + '</span><span></span><span class="eff">계산 대상 아님</span>';
-      box.appendChild(p); return;
-    }
-    const id = "cp_" + ii;
-    const row = document.createElement("div");
-    row.className = "mrow off";
-    row.innerHTML = '<input type="checkbox" id="'+id+'">' +
-      '<label class="nm" for="'+id+'">' + it.n + (it.note ? ' <span class="en">'+it.note+'</span>' : "") + '</label>' +
-      '<span class="ctl">' + ctlHTML(it, {}) + '</span><span class="eff"></span>';
-    box.appendChild(row);
-    clsRows.push({el:row, item:it, grp:{}, tile:false});
-  });
-  host.appendChild(box);
+  const draw = (hostId, title, list, pre) => {
+    const host = $(hostId); host.innerHTML = "";
+    if (!list.length) return;
+    const box = document.createElement("div");
+    box.className = "mgroup"; box.style.marginTop = "12px";
+    box.innerHTML = "<h3>" + title + "</h3>";
+    list.forEach((it, ii) => {
+      if (!it.dyn && !it.stp && !it.stf && (!it.f || !Object.keys(it.f).length)) {
+        const p = document.createElement("div");
+        p.className = "mrow off";
+        p.innerHTML = '<span></span><span style="color:var(--ink-faint);font-size:12px">' + it.n +
+          (it.note ? ' — ' + it.note : "") + '</span><span></span><span class="eff">계산 대상 아님</span>';
+        box.appendChild(p); return;
+      }
+      const id = pre + ii;
+      const row = document.createElement("div");
+      row.className = "mrow off";
+      row.innerHTML = '<input type="checkbox" id="'+id+'">' +
+        '<label class="nm" for="'+id+'">' + it.n + (it.note ? ' <span class="en">'+it.note+'</span>' : "") + '</label>' +
+        '<span class="ctl">' + ctlHTML(it, {}) + '</span><span class="eff"></span>';
+      box.appendChild(row);
+      clsRows.push({el:row, item:it, grp:{}, tile:false});
+    });
+    host.appendChild(box);
+  };
+  draw("clsPassives", "클래스 · 베이스" + (baseOf().n ? " (" + baseOf().n + ")" : "") + " · 서브 패시브",
+       (CLASSES[$("cls").value] || {p:[]}).p.concat(baseOf().p, subOf().p), "cp_");
+  draw("racePassives", "종족 패시브", raceOf().p, "rp_");
 }
 
 /* ── 스킬 특수능력 ── */
@@ -3111,6 +3144,8 @@ function tabDots(){
   const noParty = [...partyEl.querySelectorAll(".pbuff")].every(s => s.value === "0");
   dot("battle", noParty && !num("dotBurn") && !num("dotPoison") && $("dotBleed").value === "0");
   dot("gear", document.querySelectorAll('#tiles_gear .tile[aria-pressed="true"]').length === 0);
+  dot("status", !document.querySelector('#mods_status input[type=checkbox]:checked'));
+  dot("corr", !$("corr").value);
   dot("soul", soulState().cost === 0 && masteryState().used <= 4);
   dot("sim", simRows.querySelectorAll(".simrow").length === 0);
   dot("solve", !$("solveOut").innerHTML.trim());
@@ -3598,7 +3633,7 @@ $("tgtPreset").addEventListener("change", () => {
 });
 $("skill").addEventListener("change", () => {
   const i = $("skill").value;
-  if (i === ""){ $("skillSp").innerHTML = ""; spRows = []; $("skillInfo").textContent = "베이스 클래스는 상위 슈퍼 클래스의 스킬을 그대로 따릅니다."; return; }
+  if (i === ""){ $("skillSp").innerHTML = ""; spRows = []; $("skillInfo").textContent = "스킬을 고르면 기본 피해량·타수·계수가 채워집니다."; return; }
   const s = skillPool()[+i];
   $("base").value = s.b; $("hits").value = s.h;
   scalers.innerHTML = "";
