@@ -8,6 +8,7 @@
     --good:#2F6B4F; --warn:#9A4A18;
     --sel:#F6EBCC;
     --shadow:0 1px 2px rgba(36,30,40,.07), 0 8px 24px -16px rgba(36,30,40,.35);
+    --tl:36%; --tbg:7%; --tpane:5%;
   }
   @media (prefers-color-scheme: dark){
     :root:not([data-theme="light"]){
@@ -17,6 +18,7 @@
       --good:#6FCB9F; --warn:#E0964F;
       --sel:#332916;
       --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -18px rgba(0,0,0,.9);
+      --tl:68%; --tbg:9%; --tpane:6%;
     }
   }
   :root[data-theme="dark"]{
@@ -26,6 +28,7 @@
     --good:#6FCB9F; --warn:#E0964F;
     --sel:#332916;
     --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -18px rgba(0,0,0,.9);
+    --tl:68%; --tbg:9%; --tpane:6%;
   }
 
   *{box-sizing:border-box;
@@ -115,22 +118,25 @@
   .chip .n{font-family:"JetBrains Mono",monospace;font-size:10px;color:var(--ink-faint);margin-left:4px}
   .tile .tmeta{display:flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:9.5px;color:var(--ink-faint);font-family:"JetBrains Mono",monospace}
   .tile .rar{font-family:"Noto Sans KR",sans-serif;font-style:normal;font-size:9.5px;padding:0 5px;border-radius:2px;border:1px solid currentColor;line-height:15px}
-  .rar.r1{color:#9aa0a6} .rar.r2{color:#5fb36a} .rar.r3{color:#5aa2e6} .rar.r4{color:#b086e6} .rar.r5{color:#d9a93d}
+  /* 등급 색도 테마 밝기(--tl)를 따라간다 — 낮엔 진하게, 밤엔 밝게 */
+  .r1{--rc:hsl(215 10% var(--tl))} .r2{--rc:hsl(130 42% var(--tl))} .r3{--rc:hsl(210 66% var(--tl))}
+  .r4{--rc:hsl(270 56% var(--tl))} .r5{--rc:hsl(40 76% var(--tl))}
+  .rar.r1,.rar.r2,.rar.r3,.rar.r4,.rar.r5{color:var(--rc)}
   .tile .dtag{font-family:"Noto Sans KR",sans-serif;font-size:9.5px;color:var(--gold)}
   .rhead{grid-column:1/-1;display:flex;align-items:center;gap:10px;margin:8px 0 1px;
     font-family:"Noto Sans KR",sans-serif;font-size:12px;font-weight:700;letter-spacing:.06em}
   .rhead:first-child{margin-top:0}
   .rhead::after{content:"";flex:1;border-top:1px solid currentColor;opacity:.45}
   .rhead .n{font-family:"JetBrains Mono",monospace;font-size:10px;font-weight:400;opacity:.8}
-  .rhead.r1{color:#9aa0a6} .rhead.r2{color:#5fb36a} .rhead.r3{color:#5aa2e6} .rhead.r4{color:#b086e6} .rhead.r5{color:#d9a93d}
+  .rhead.r1,.rhead.r2,.rhead.r3,.rhead.r4,.rhead.r5{color:var(--rc)}
   .tile .rgn{font-family:"Noto Sans KR",sans-serif}
 
   /* ── 체크 행 ── */
   .mgroup{margin-bottom:12px}
-  .mgroup > h3{font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--ink-faint);
+  .mgroup > h3, details.soulfold > summary > h3{font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--ink-faint);
     margin:0 0 5px;text-transform:uppercase}
-  .mgroup > h3 em{font-style:normal;text-transform:none;letter-spacing:0;font-weight:400}
-  .mgroup > h3{display:flex;align-items:center;gap:8px}
+  .mgroup > h3 em, details.soulfold > summary > h3 em{font-style:normal;text-transform:none;letter-spacing:0;font-weight:400}
+  .mgroup > h3, details.soulfold > summary > h3{display:flex;align-items:center;gap:8px}
   details.soulfold{border-top:1px solid var(--line);padding-top:8px}
   details.soulfold > summary{list-style:none;cursor:pointer}
   details.soulfold > summary::-webkit-details-marker{display:none}
@@ -223,6 +229,39 @@
   .tab[aria-selected="true"]{background:var(--panel);color:var(--ink);
     border-color:var(--line);box-shadow:inset 0 2px 0 var(--gold)}
   .tab .dot{width:5px;height:5px;border-radius:50%;background:var(--ink-faint);opacity:.55}
+
+  /* ── 탭별 색 (색상환을 고르게 나눔 · 밝기는 테마가 정함) ── */
+  .tab, .tabpane{--tc:hsl(var(--h) var(--s, 58%) var(--tl))}
+  [data-t="load"],   [data-p="load"]  {--h:222; --s:18%}
+  [data-t="build"],  [data-p="build"] {--h:44;  --s:66%}
+  [data-t="stat"],   [data-p="stat"]  {--h:158}
+  [data-t="race"],   [data-p="race"]  {--h:112; --s:46%}
+  [data-t="gear"],   [data-p="gear"]  {--h:24;  --s:66%}
+  [data-t="status"], [data-p="status"]{--h:354}
+  [data-t="corr"],   [data-p="corr"]  {--h:318; --s:54%}
+  [data-t="soul"],   [data-p="soul"]  {--h:276; --s:52%}
+  [data-t="battle"], [data-p="battle"]{--h:212; --s:62%}
+  [data-t="sim"],    [data-p="sim"]   {--h:186; --s:62%}
+  [data-t="solve"],  [data-p="solve"] {--h:246; --s:48%}
+
+  .tab{background:color-mix(in srgb, var(--tc) var(--tbg), transparent);
+    border-color:color-mix(in srgb, var(--tc) 24%, transparent);
+    color:color-mix(in srgb, var(--tc) 62%, var(--ink-soft))}
+  .tab:hover{color:var(--ink);background:color-mix(in srgb, var(--tc) 15%, transparent)}
+  .tab[aria-selected="true"]{background:color-mix(in srgb, var(--tc) 14%, var(--panel));
+    border-color:color-mix(in srgb, var(--tc) 55%, var(--line));
+    color:var(--ink);box-shadow:inset 0 3px 0 var(--tc)}
+  .tab .dot{background:var(--tc);opacity:.75}
+
+  /* 탭 화면: 그 탭 색이 은은하게 깔린 바탕 + 섹션 테두리·제목도 같은 색 */
+  .tabpane{background:color-mix(in srgb, var(--tc) var(--tpane), transparent);
+    border:1px solid color-mix(in srgb, var(--tc) 30%, var(--line));border-top:3px solid var(--tc);
+    border-radius:0 0 6px 6px;padding:14px 14px 2px;margin-top:-14px}
+  .tabpane > fieldset{background:color-mix(in srgb, var(--tc) 4%, var(--panel));
+    border-color:color-mix(in srgb, var(--tc) 28%, var(--line))}
+  .tabpane > fieldset > legend{color:var(--tc)}
+  .tabpane .mgroup > h3, .tabpane details.soulfold > summary > h3{color:color-mix(in srgb, var(--tc) 70%, var(--ink-faint))}
+  @media (max-width:620px){ .tabpane{padding:10px 8px 1px} }
   .tabpane[hidden]{display:none}
 
   /* ── 참고 표 ── */
