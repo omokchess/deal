@@ -117,6 +117,12 @@
   .tile .rar{font-family:"Noto Sans KR",sans-serif;font-style:normal;font-size:9.5px;padding:0 5px;border-radius:2px;border:1px solid currentColor;line-height:15px}
   .rar.r1{color:#9aa0a6} .rar.r2{color:#5fb36a} .rar.r3{color:#5aa2e6} .rar.r4{color:#b086e6} .rar.r5{color:#d9a93d}
   .tile .dtag{font-family:"Noto Sans KR",sans-serif;font-size:9.5px;color:var(--gold)}
+  .rhead{grid-column:1/-1;display:flex;align-items:center;gap:10px;margin:8px 0 1px;
+    font-family:"Noto Sans KR",sans-serif;font-size:12px;font-weight:700;letter-spacing:.06em}
+  .rhead:first-child{margin-top:0}
+  .rhead::after{content:"";flex:1;border-top:1px solid currentColor;opacity:.45}
+  .rhead .n{font-family:"JetBrains Mono",monospace;font-size:10px;font-weight:400;opacity:.8}
+  .rhead.r1{color:#9aa0a6} .rhead.r2{color:#5fb36a} .rhead.r3{color:#5aa2e6} .rhead.r4{color:#b086e6} .rhead.r5{color:#d9a93d}
   .tile .rgn{font-family:"Noto Sans KR",sans-serif}
 
   /* ── 체크 행 ── */
@@ -1565,7 +1571,7 @@ const GEAR_REGION = {
 "할로윈":["위치 브룸","위치 캡","스테인디드 마스크","헌티드 클로스","스파이더 헤어클립","펌킨 가츠","엑토플라즈믹 젤","투스 앤 네일","코일드 콥웹스"]
 };
 const RG_OF = {}; for (const [r, l] of Object.entries(GEAR_REGION)) l.forEach(n => RG_OF[n] = r);
-const RAR = {"일반":1, "고급":2, "희귀":3, "에픽":4, "전설":5};
+const RAR = {"일반":1, "고급":2, "희귀":3, "전설":4, "에픽":5};   // 에픽이 최상위
 const RAR_OF = {};
 ["행운의 뿔","결정화된 가시","피어나는 눈꽃","세월의 장","감염된 신체","쉐도우 건틀렛","크리스탈라이즈드 스타","임퓨어 크라운",
  "더 라스트 스트로우","임뷰드 체인","샤드 오브 블라이트","에버비팅 드럼","드래곤 메모이르","나르타나 리프","블레이징 퍼포레이터",
@@ -3089,7 +3095,7 @@ function chipBar(host, labels, key){
 function applyTileFilter(){
   const pick = id => { const c = document.querySelector("#" + id + ' .chip[aria-pressed="true"]'); return c ? c.dataset.r : "전체"; };
   const q = NORM($("gearSearch").value);
-  let shown = 0;
+  let shown = 0; const perRar = {};
   [["gear", pick("gearChips"), $("gearDmgOnly").checked, $("gearOnOnly").checked, q],
    ["art",  "전체", $("artDmgOnly").checked, false, ""],
    ["ench", "전체", $("enchDmgOnly").checked, false, ""]].forEach(([key, rg, dmg, on, qq]) => {
@@ -3097,13 +3103,24 @@ function applyTileFilter(){
       const ok = (!qq || NORM(t.dataset.q).includes(qq)) && (rg === "전체" || t.dataset.rg === rg) &&
                  (!dmg || t.dataset.dmg === "1") && (!on || t.getAttribute("aria-pressed") === "true");
       t.style.display = ok ? "" : "none";
-      if (key === "gear") t.style.order = rg === "전체" ? (5 - (+t.dataset.rar)) * 1000 + (+t.dataset.idx) : +t.dataset.idx;
-      if (ok && key === "gear") shown++;
+      if (key === "gear"){ t.style.order = (5 - (+t.dataset.rar)) * 1000 + (+t.dataset.idx); if (ok){ shown++; perRar[t.dataset.rar] = (perRar[t.dataset.rar] || 0) + 1; } }
     });
   });
-  $("gearShown").textContent = shown + "개 표시" + (pick("gearChips") === "전체" ? " · 등급순 (전설 → 일반)" : "") + " · ◆ 딜 = 피해량 계산에 실제로 들어가는 기어 · 나머지는 회복·방어·유틸이라 표시만";
+  document.querySelectorAll("#tiles_gear .rhead").forEach(h => {
+    const c = perRar[h.dataset.rar] || 0;
+    h.style.display = c ? "" : "none";
+    h.querySelector(".n").textContent = c;
+  });
+  $("gearShown").textContent = shown + "개 표시 · 등급순 (에픽 → 전설 → 희귀 → 고급 → 일반) · ◆ 딜 = 피해량 계산에 실제로 들어가는 기어 · 나머지는 회복·방어·유틸이라 표시만";
 }
 chipBar($("gearChips"), Object.keys(GEAR_REGION), "gear");
+Object.entries(RAR).forEach(([name, r]) => {     // 등급 구분 줄 (CSS order로 각 등급 바로 앞에 놓인다)
+  const h = document.createElement("div");
+  h.className = "rhead r" + r; h.dataset.rar = r;
+  h.style.order = (5 - r) * 1000 - 1;
+  h.innerHTML = name + ' <span class="n"></span>';
+  $("tiles_gear").appendChild(h);
+});
 ["gearSearch","gearDmgOnly","gearOnOnly","artDmgOnly","enchDmgOnly"].forEach(id => $(id).addEventListener("input", applyTileFilter));
 document.querySelectorAll("#tiles_gear, #tiles_art").forEach(h => h.addEventListener("click", () => { if ($("gearOnOnly").checked) applyTileFilter(); }));
 applyTileFilter();
