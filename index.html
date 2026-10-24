@@ -532,13 +532,16 @@
     <p class="capmsg" id="cap_gear"></p>
   </fieldset>
   <fieldset>
-    <legend>유물 · 인챈트 <span class="cnt" id="artCnt">0/2</span></legend>
-    <div class="gfbar">
-      <div class="chips" id="artChips" style="margin:0"></div>
-      <label class="gtog"><input type="checkbox" id="artDmgOnly"> 딜에 영향 있는 것만</label>
-    </div>
+    <legend>유물 <span class="cnt" id="artCnt">0/1</span></legend>
+    <div class="gfbar"><label class="gtog"><input type="checkbox" id="artDmgOnly"> 딜에 영향 있는 것만</label></div>
     <div class="tiles" id="tiles_art"></div>
     <p class="capmsg" id="cap_art"></p>
+  </fieldset>
+  <fieldset>
+    <legend>인챈트 <span class="cnt" id="enchCnt">0/1</span></legend>
+    <div class="gfbar"><label class="gtog"><input type="checkbox" id="enchDmgOnly"> 딜에 영향 있는 것만</label></div>
+    <div class="tiles" id="tiles_ench"></div>
+    <p class="capmsg" id="cap_ench"></p>
   </fieldset>
   <fieldset>
     <legend>무기 · 갑옷</legend>
@@ -568,8 +571,7 @@
   <fieldset>
     <legend>착용 중 기어 스탯</legend>
     <div id="gearStatOut" class="mrow" style="grid-template-columns:1fr"><span class="nm">—</span></div>
-    <p class="hint">기어의 <b>고정 스탯</b>만 반영합니다. 티어별 추가 스탯(T1~T6 랜덤 롤)은 아직 안 넣었습니다.
-      대상이 착용하는 기어(마그마 참, 몰튼 캐라피스 등)는 상대 것이라 내 스탯에 더하지 않습니다.</p>
+    <p class="hint">기어·유물의 <b>고정 스탯</b>만 반영합니다. 티어별 추가 스탯(T1~T6 랜덤 롤)은 스탯 배분 칸에 더하거나, 스탯창 값을 그대로 입력하세요.</p>
   </fieldset>
 </div>
 <div class="tabpane" data-p="soul" hidden>
@@ -683,7 +685,7 @@
       <button type="button" class="btn pri" id="solve">빌드 계산</button>
     </div>
     <div id="solveOut"></div>
-    <p class="hint">지금 고른 스킬과 대상 방어 수치를 기준으로 <b>스탯 배분 · 기어 4칸 · 유물 2칸 · 특성 슬롯 · 조건부 버프 ·
+    <p class="hint">지금 고른 스킬과 대상 방어 수치를 기준으로 <b>스탯 배분 · 기어 4칸 · 유물 1칸 · 인챈트 1칸 · 특성 슬롯 · 조건부 버프 ·
       파티 지원 3명 · 무기 · 갑옷 · 샤드 · 마스터리 35p · 소울 트리</b>를 함께 탐색합니다. 켜져 있는 항목은 무시하고 처음부터 다시 짭니다.<br>
       <b>현실 빌드</b>는 동시에 만족시켜야 하는 조건부 버프를 3개로 제한하고, 스택형 효과는 최대치의 절반만 가정하며,
       유지하기 어려운 샤드(익스큐팅·리버싱)는 빼고 계산합니다. <b>이론상 최대</b>는 전부 최대치로 잡습니다.</p>
@@ -849,7 +851,7 @@ const MODS = [
   {n:"투스 앤 네일", note:"최고 코스트 슈퍼 클래스 스킬 사용 시 그 턴 피해량 버프의 절반만큼 피해 저항", f:{}},
   {n:"코일드 콥웹스", note:"2코 이하 스킬마다 구속 · 5턴 쌓이면 1턴 봉인 후 3코 이상 스킬이 처음 쓸 때까지 3코 고정", f:{}}
 ]},
-{g:"유물 · 인챈트", key:"art", tiles:true, cap:2, items:[
+{g:"유물", key:"art", tiles:true, cap:1, items:[
   // ── 장착형 유물 ──
   {n:"스텔리안 코어", note:"체력 95% 이상", f:{multi:30, crit:15}},
   {n:"시프팅 아워글래스", note:"버프당 +20%, 최대 5회", f:{multi:20}, max:5, unit:"스택"},
@@ -863,7 +865,8 @@ const MODS = [
   {n:"아르카이아 비새지", note:"3턴 계약 · 받는 피해를 대상도 받음", f:{}},
   {n:"파라녹시안 크럭스", note:"최대 체력 75% 감소 → 줄어든 만큼 쉴드 전환", f:{}},
   {n:"셀레스티얼 엠블럼", note:"아스트라 마크 획득용", f:{}},
-  // ── 인챈트 ──
+]},
+{g:"인챈트", key:"ench", tiles:true, cap:1, items:[
   {n:"인페르노", note:"화상 걸린 적 +20%", f:{multi:20}},
   {n:"리퍼", note:"발동 시 대상 체력 비례 최대 +25% · 입힌 피해 10% 회복 확률", f:{multi:25}},
   {n:"커스드", note:"16.6% 무작위 디버프 3턴 · 저주/분열 대상 보너스는 높은 쪽 하나만", opts:[["저주 대상 +30%",{multi:30}],["분열 대상 +20%",{multi:20}],["둘 다 없음",{}]]},
@@ -1565,7 +1568,7 @@ function tileMeta(it, grp){
     const r = RAR_OF[it.n] || "희귀";
     bits.push('<em class="rar r' + RAR[r] + '">' + r + '</em>');
     if (RG_OF[it.n]) bits.push('<span class="rgn">' + RG_OF[it.n] + '</span>');
-  } else bits.push('<em class="rar r' + (ENCHANT_NAMES.has(it.n) ? 4 : 5) + '">' + (ENCHANT_NAMES.has(it.n) ? "인챈트" : "유물") + '</em>');
+  } else bits.push('<em class="rar r' + (grp.key === "ench" ? 4 : 5) + '">' + (grp.key === "ench" ? "인챈트" : "유물") + '</em>');
   const st = GEAR_STATS[it.n];
   if (st) bits.push(Object.entries(st).map(([k, v]) => STATS[k] + "+" + v).join(" "));
   if (isDmgItem(it)) bits.push('<span class="dtag">◆ 딜</span>');
@@ -1594,7 +1597,7 @@ MODS.forEach(grp => {
       b.addEventListener("keydown", e => {
         if (e.key === "Enter" || e.key === " "){ e.preventDefault(); b.click(); }
       });
-      b.dataset.rg = grp.key === "gear" ? (RG_OF[it.n] || "기타") : (ENCHANT_NAMES.has(it.n) ? "인챈트" : "유물");
+      b.dataset.rg = grp.key === "gear" ? (RG_OF[it.n] || "기타") : grp.key === "ench" ? "인챈트" : "유물";
       b.dataset.dmg = isDmgItem(it) ? "1" : "0";
       b.dataset.q = it.n + " " + (it.note || "") + " " + b.dataset.rg;
       b.innerHTML = '<span class="tn">' + it.n + '</span>' + tileMeta(it, grp) +
@@ -1605,7 +1608,7 @@ MODS.forEach(grp => {
         if (e.target.closest(".tctl")) return;
         const on = b.getAttribute("aria-pressed") === "true";
         if (!on && host.querySelectorAll('[aria-pressed="true"]').length >= grp.cap){
-          $("cap_" + grp.key).textContent = grp.g + "는 최대 " + grp.cap + "개까지 선택할 수 있습니다.";
+          $("cap_" + grp.key).textContent = grp.g + ((grp.g.charCodeAt(grp.g.length-1) - 0xAC00) % 28 ? "은" : "는") + " 최대 " + grp.cap + "개까지 선택할 수 있습니다.";
           return;
         }
         $("cap_" + grp.key).textContent = "";
@@ -1797,9 +1800,9 @@ function collectMods(ctx){
     $("bd").innerHTML = lines.length
       ? lines.map(([a,b]) => "<li><span>"+a+"</span><b>"+b+"</b></li>").join("")
       : '<li class="empty">선택한 항목 없음 — 직접 입력값만 반영됩니다.</li>';
-    ["gear","art"].forEach(k => {
+    ["gear","art","ench"].forEach(k => {
       const grp = MODS.find(g => g.key === k);
-      $(k === "gear" ? "gearCnt" : "artCnt").textContent =
+      $(k + "Cnt").textContent =
         $("tiles_"+k).querySelectorAll('[aria-pressed="true"]').length + "/" + grp.cap;
     });
   }
@@ -2780,7 +2783,7 @@ function renderCard(M, r, k, hits, expPerHit){
     while (cells.length < cap) cells.push('<div class="slot empty">빈 칸</div>');
     return cells.join("");
   };
-  const g = pressedIn("gear"), a = pressedIn("art");
+  const g = pressedIn("gear"), a = pressedIn("art").concat(pressedIn("ench"));
   $("cardGearCnt").textContent = g.length + "/4";
   $("cardGear").innerHTML = slotHTML(g, 4);
   $("cardArt").innerHTML = slotHTML(a, 2);
@@ -2960,21 +2963,18 @@ function loadBuild(){
       else log.miss.push("기어 : " + nm);
     });
   }
-  // ── 유물 · 인챈트 (최대 2) ──
-  const artNames = [];
+  // ── 유물 · 인챈트 (각 1칸) ──
   const art = get(["유물"]), ench = get(["인챈트"]);
-  if (art && !/오브/.test(Object.keys(data).find(k => data[k] === art) || "")) artNames.push(first(art));
-  if (ench) artNames.push(first(ench));
-  if (artNames.length){
-    document.querySelectorAll('#tiles_art .tile[aria-pressed="true"]').forEach(t => t.click());
-    const tiles = [...document.querySelectorAll('#tiles_art .tile')];
+  const pickTile = (key, nm, label) => {
+    document.querySelectorAll('#tiles_' + key + ' .tile[aria-pressed="true"]').forEach(t => t.click());
+    const tiles = [...document.querySelectorAll('#tiles_' + key + ' .tile')];
     const list = tiles.map(t => t.querySelector(".tn").textContent);
-    artNames.slice(0, 2).forEach(nm => {
-      const hit = findBest(nm, list);
-      if (hit){ tiles[list.indexOf(hit)].click(); log.ok.push("유물·인챈트 → " + hit); }
-      else log.miss.push("유물·인챈트 : " + nm);
-    });
-  }
+    const hit = findBest(nm, list);
+    if (hit){ tiles[list.indexOf(hit)].click(); log.ok.push(label + " → " + hit); }
+    else log.miss.push(label + " : " + nm);
+  };
+  if (art && !/오브/.test(Object.keys(data).find(k => data[k] === art) || "")) pickTile("art", first(art), "유물");
+  if (ench) pickTile("ench", first(ench), "인챈트");
 
   // ── 샤드 ──
   const shard = get(["샤드"]);
@@ -3029,6 +3029,7 @@ $("loadBuild").addEventListener("click", loadBuild);
 $("dumpBuild").addEventListener("click", () => {
   const gear = [...document.querySelectorAll('#tiles_gear .tile[aria-pressed="true"] .tn')].map(x => x.textContent);
   const art = [...document.querySelectorAll('#tiles_art .tile[aria-pressed="true"] .tn')].map(x => x.textContent);
+  const ench = [...document.querySelectorAll('#tiles_ench .tile[aria-pressed="true"] .tn')].map(x => x.textContent);
   const sh = {};
   document.querySelectorAll("#shardSlots .shType").forEach(x => { if (x.value !== "— 비움 —") sh[x.value] = (sh[x.value]||0)+1; });
   const lines = [
@@ -3041,6 +3042,7 @@ $("dumpBuild").addEventListener("click", () => {
     "샤드 : " + (Object.entries(sh).map(([k,v]) => k + " " + v).join(", ") || "X"),
     "갑옷 : " + $("armor").value,
     "유물 : " + (art.join(", ") || "X"),
+    "인챈트 : " + (ench.join(", ") || "X"),
     "커럽션 : " + ($("corr").selectedOptions[0].textContent),
     "기어 :", ...gear.map(g => "- " + g)
   ];
@@ -3064,7 +3066,8 @@ function applyTileFilter(){
   const q = NORM($("gearSearch").value);
   let shown = 0;
   [["gear", pick("gearChips"), $("gearDmgOnly").checked, $("gearOnOnly").checked, q],
-   ["art",  pick("artChips"),  $("artDmgOnly").checked, false, ""]].forEach(([key, rg, dmg, on, qq]) => {
+   ["art",  "전체", $("artDmgOnly").checked, false, ""],
+   ["ench", "전체", $("enchDmgOnly").checked, false, ""]].forEach(([key, rg, dmg, on, qq]) => {
     document.querySelectorAll("#tiles_" + key + " .tile").forEach(t => {
       const ok = (!qq || NORM(t.dataset.q).includes(qq)) && (rg === "전체" || t.dataset.rg === rg) &&
                  (!dmg || t.dataset.dmg === "1") && (!on || t.getAttribute("aria-pressed") === "true");
@@ -3075,8 +3078,7 @@ function applyTileFilter(){
   $("gearShown").textContent = shown + "개 표시 · ◆ 딜 = 피해량 계산에 실제로 들어가는 기어 · 나머지는 회복·방어·유틸이라 표시만";
 }
 chipBar($("gearChips"), Object.keys(GEAR_REGION), "gear");
-chipBar($("artChips"), ["유물", "인챈트"], "art");
-["gearSearch","gearDmgOnly","gearOnOnly","artDmgOnly"].forEach(id => $(id).addEventListener("input", applyTileFilter));
+["gearSearch","gearDmgOnly","gearOnOnly","artDmgOnly","enchDmgOnly"].forEach(id => $(id).addEventListener("input", applyTileFilter));
 document.querySelectorAll("#tiles_gear, #tiles_art").forEach(h => h.addEventListener("click", () => { if ($("gearOnOnly").checked) applyTileFilter(); }));
 applyTileFilter();
 
@@ -3120,7 +3122,8 @@ $("copyBuild").addEventListener("click", () => {
     $("cardSub").textContent, "",
     "스탯: " + Object.entries(STATS).map(([k,v]) => v + " " + num(k)).join(" / "),
     "기어: " + (pressedIn("gear").map(x => x.item.n).join(", ") || "없음"),
-    "유물·인챈트: " + (pressedIn("art").map(x => x.item.n).join(", ") || "없음"),
+    "유물: " + (pressedIn("art").map(x => x.item.n).join(", ") || "없음"),
+    "인챈트: " + (pressedIn("ench").map(x => x.item.n).join(", ") || "없음"),
     "버프: " + ([...$("cardBuffs").querySelectorAll("li")].map(l => l.textContent).join(", ")),
     "", "행동: " + (SIM ? SIM.seq.map(s => s.t + " " + s.label + " (" + s.dmg + ")").join(" → ") : "—"),
     "", "타당 기대 " + $("cardNums").textContent
@@ -3189,7 +3192,7 @@ function candidates(){
   const out = [];
   MODS.forEach(grp => {
     grp.items.forEach((it, ii) => {
-      const kind = grp.key === "gear" ? "gear" : grp.key === "art" ? "art"
+      const kind = grp.key === "gear" ? "gear" : grp.key === "art" ? "art" : grp.key === "ench" ? "ench"
                  : grp.tier ? "trait" : "cond";
       if (kind === "cond" && !useCond) return;
       if (kind === "trait"){
@@ -3329,7 +3332,7 @@ function allocStats(acc, budget){
 }
 
 function greedyPick(stats, pool, caps){
-  const chosen = [], used = {gear:0, art:0, trait:0, cond:0, party:0}, seen = new Set();
+  const chosen = [], used = {gear:0, art:0, ench:0, trait:0, cond:0, party:0}, seen = new Set();
   const hits = Math.max(1, Math.round(num("hits")));
   const cpHave = CACHE.cp ? CACHE.cp.have : 0;
   let cpSpent = 0;
@@ -3381,7 +3384,7 @@ function solve(){
   const goal = num("goal"), budget = num("budget"), slots = Math.round(num("traitSlots"));
   const pool = candidates();
   const real = $("realism").value === "real";
-  const caps = {gear:4, art:2, trait: slots > 0 ? 1 : 0, cond: real ? 3 : 99, party: 3};
+  const caps = {gear:4, art:1, ench:1, trait: slots > 0 ? 1 : 0, cond: real ? 3 : 99, party: 3};
   const soulBudget = num("soulBudget");
   let stats = allocStats(EMPTY(), budget), chosen = [], soulPick = {picked:[], spent:0};
   for (let pass = 0; pass < 3; pass++){
@@ -3452,7 +3455,7 @@ function solve(){
 
 function render(chosen, contrib, nextUp, stats, dmg, goal, baseline, trimmed, slots, soulPick, gearSet, mastPlan){
   const ok = dmg >= goal;
-  const groupOf = k => ({gear:"기어", art:"유물·인챈트", trait:"특성", cond:"상황·버프", party:"파티 지원"})[k];
+  const groupOf = k => ({gear:"기어", art:"유물", ench:"인챈트", trait:"특성", cond:"상황·버프", party:"파티 지원"})[k];
   const byKind = {};
   chosen.forEach(c => (byKind[c.kind] = byKind[c.kind] || []).push(c));
 
