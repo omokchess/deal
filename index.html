@@ -260,6 +260,17 @@
   .tabpane > fieldset{background:color-mix(in srgb, var(--tc) 4%, var(--panel));
     border-color:color-mix(in srgb, var(--tc) 28%, var(--line))}
   .tabpane > fieldset > legend{color:var(--tc)}
+  /* 섹션 색: 왼쪽 굵은 띠 + 알약 제목 + 안의 타일까지 같은 색 */
+  .tabpane > fieldset.sec{--tc:hsl(var(--h) var(--s, 58%) var(--tl));
+    background:color-mix(in srgb, var(--tc) 7%, var(--panel));
+    border-color:color-mix(in srgb, var(--tc) 45%, var(--line));border-left:4px solid var(--tc)}
+  .tabpane > fieldset.sec > legend{color:var(--tc);background:color-mix(in srgb, var(--tc) 16%, var(--panel));
+    border:1px solid color-mix(in srgb, var(--tc) 55%, transparent);border-radius:999px;padding:1px 11px}
+  .sec .tile{background:color-mix(in srgb, var(--tc) 8%, var(--panel-2));border-color:color-mix(in srgb, var(--tc) 28%, var(--line))}
+  .sec .tile:hover{border-color:var(--tc)}
+  .sec .tile[aria-pressed="true"]{background:color-mix(in srgb, var(--tc) 24%, var(--panel));border-color:var(--tc);
+    box-shadow:inset 0 0 0 1px var(--tc)}
+  .sec .chip[aria-pressed="true"]{border-color:var(--tc);background:color-mix(in srgb, var(--tc) 20%, var(--panel))}
   .tabpane .mgroup > h3, .tabpane details.soulfold > summary > h3{color:color-mix(in srgb, var(--tc) 70%, var(--ink-faint))}
   @media (max-width:620px){ .tabpane{padding:10px 8px 1px} }
   .tabpane[hidden]{display:none}
@@ -439,7 +450,7 @@
   </fieldset>
 </div>
 <div class="tabpane" data-p="build">
-  <fieldset>
+  <fieldset class="sec" style="--h:44;--s:66%">
     <legend>클래스 &amp; 스킬</legend>
     <div class="grid c3">
       <label><span class="k">슈퍼 클래스</span><select id="cls"></select></label>
@@ -449,14 +460,14 @@
     <p class="hint" id="skillInfo">스킬 목록에는 슈퍼 클래스 스킬 뒤로 <b>[베이스]</b>(무기 계열로 자동) · <b>[서브]</b> · <b>[종족]</b> · <b>[기어]</b>(낀 기어가 주는 스킬)가 붙습니다.</p>
     <div id="clsPassives"></div>
   </fieldset>
-  <fieldset>
+  <fieldset class="sec" style="--h:8;--s:52%">
     <legend>갑옷</legend>
     <div class="grid c2"><label><span class="k">갑옷</span><select id="armor"></select></label></div>
     <div class="mrow" style="grid-template-columns:1fr auto"><span class="nm" id="armorOut">—</span></div>
     <p class="hint">갑옷의 <b>스탯 +N / +N%</b>는 「내 스탯」 위에 얹혀 계수와 치명타에 바로 들어가고, 체력·속성별 디펜스는 표시만 합니다.
       힘 빌드는 <b>방랑하는 수련가</b>(근력 +10%), 신비 빌드는 <b>죽음의 망토</b>(신비 +10%)가 가장 높습니다.</p>
   </fieldset>
-  <fieldset>
+  <fieldset class="sec" style="--h:168;--s:52%">
     <legend>스킬 수치</legend>
     <div class="grid c3">
       <label><span class="k">기본 피해량 <span class="en">Base</span></span><input type="number" id="base" value="5" step="0.1"></label>
@@ -479,7 +490,7 @@
     <div id="skillSp"></div>
     <p class="hint"><code>Base × (1 + Σ(스탯 ÷ 계수))</code> — 예) 근력 100, 계수 75 → ×2.333. 계수 분모가 트렐로에 없는 스킬은 0으로 들어오니 직접 채우세요.</p>
   </fieldset>
-  <fieldset>
+  <fieldset class="sec" style="--h:332;--s:50%">
     <legend>대미지 필드 <span class="cnt">· 직접 입력</span></legend>
     <div class="grid c2">
       <label><span class="k">고정 가감 <span class="en">Flat</span></span><input type="number" id="flat" value="0" step="1"></label>
@@ -491,7 +502,7 @@
   </fieldset>
 </div>
 <div class="tabpane" data-p="stat" hidden>
-  <fieldset>
+  <fieldset class="sec" style="--h:222;--s:22%">
     <legend>캐릭터</legend>
     <div class="grid c2">
       <label><span class="k">레벨</span><input type="number" id="lvl" value="50" min="1" max="60" step="1"></label>
@@ -504,7 +515,7 @@
     <div class="mrow" style="grid-template-columns:1fr auto;margin-top:8px">
       <span class="nm" id="charOut">—</span><span class="eff" id="ptOut">—</span></div>
   </fieldset>
-  <fieldset>
+  <fieldset class="sec" style="--h:152;--s:50%">
     <legend>스탯 배분 <span class="cnt" id="allocCnt">0/150</span></legend>
     <div class="grid c5">
       <label><span class="k">근력 <span class="en">배분</span></span><input type="number" id="STR" min="0" value="0"></label>
@@ -551,7 +562,7 @@
   </fieldset>
 </div>
 <div class="tabpane" data-p="corr" hidden>
-  <fieldset>
+  <fieldset class="sec" style="--h:318;--s:54%">
     <legend>커럽션 · 커럽트 파워</legend>
     <div class="grid c3">
       <label><span class="k">커럽션</span>
@@ -577,13 +588,13 @@
       커럽트 파워 강화는 트렐로 기준 <b>다음 한 타(첫 타)</b>에만 들어갑니다. 다단히트면 강화분이 타수로 나뉘어 평균에 반영됩니다.
       실측(스트라이크 69.1 → 69.1)으로는 강화 자체가 작동하지 않아 기본은 꺼 두었습니다.</p>
   </fieldset>
-  <fieldset>
+  <fieldset class="sec" style="--h:280;--s:48%">
     <legend>커럽션 상태</legend>
     <div id="mods_corr"></div>
   </fieldset>
 </div>
 <div class="tabpane" data-p="gear" hidden>
-  <fieldset>
+  <fieldset class="sec" style="--h:20;--s:74%">
     <legend>기어 <span class="cnt" id="gearCnt">0/4</span></legend>
     <div class="gfbar">
       <input type="text" id="gearSearch" placeholder="기어 이름·효과 검색…">
@@ -595,19 +606,19 @@
     <p class="hint" id="gearShown" style="margin-top:6px"></p>
     <p class="capmsg" id="cap_gear"></p>
   </fieldset>
-  <fieldset>
+  <fieldset class="sec" style="--h:182;--s:62%">
     <legend>유물 <span class="cnt" id="artCnt">0/1</span></legend>
     <div class="gfbar"><label class="gtog"><input type="checkbox" id="artDmgOnly"> 딜에 영향 있는 것만</label></div>
     <div class="tiles" id="tiles_art"></div>
     <p class="capmsg" id="cap_art"></p>
   </fieldset>
-  <fieldset>
+  <fieldset class="sec" style="--h:286;--s:60%">
     <legend>인챈트 <span class="cnt" id="enchCnt">0/1</span></legend>
     <div class="gfbar"><label class="gtog"><input type="checkbox" id="enchDmgOnly"> 딜에 영향 있는 것만</label></div>
     <div class="tiles" id="tiles_ench"></div>
     <p class="capmsg" id="cap_ench"></p>
   </fieldset>
-  <fieldset>
+  <fieldset class="sec" style="--h:220;--s:30%">
     <legend>무기</legend>
     <div class="grid c2">
       <label><span class="k">무기</span><select id="weap"></select></label>
@@ -618,7 +629,7 @@
     <p class="hint">무기는 계열 효과만 반영합니다 (같은 계열이면 검·창·지팡이 상관없이 같은 효과). 갑옷은 「클래스 · 스킬」 탭에 있습니다.</p>
   </fieldset>
 
-  <fieldset>
+  <fieldset class="sec" style="--h:136;--s:46%">
     <legend>샤드 <span class="cnt" id="shardCnt">0/0</span></legend>
     <label style="max-width:220px;margin-bottom:10px"><span class="k">슬롯 추가 <span class="en">아카니움 크리스탈</span></span>
       <input type="number" id="shardExtra" value="0" min="0" max="6" step="1"></label>
@@ -629,25 +640,25 @@
       조건부 샤드(스트라이킹·익스큐팅·섀터링·리버싱)는 시뮬레이션에서 그 턴의 대상 체력·디버프 수로 자동 판정합니다.</p>
   </fieldset>
 
-  <fieldset>
+  <fieldset class="sec" style="--h:222;--s:16%">
     <legend>착용 중 기어 스탯</legend>
     <div id="gearStatOut" class="mrow" style="grid-template-columns:1fr"><span class="nm">—</span></div>
     <p class="hint">기어·유물의 <b>고정 스탯</b>만 반영합니다. 티어별 추가 스탯(T1~T6 랜덤 롤)은 스탯 배분 칸에 더하거나, 스탯창 값을 그대로 입력하세요.</p>
   </fieldset>
-  <fieldset>
+  <fieldset class="sec" style="--h:52;--s:72%">
     <legend>기어 특성 (오브)</legend>
     <div id="mods_trait"></div>
     <p class="hint">오브는 기어 4칸 × 1~2슬롯 + 유물 2슬롯, 최대 10개. 같은 특성 여러 개는 중첩됩니다 (개발 문서: 트레잇은 미테스트).</p>
   </fieldset>
 </div>
 <div class="tabpane" data-p="soul" hidden>
-  <fieldset>
+  <fieldset class="sec" style="--h:276;--s:52%">
     <legend>소울 트리 <span class="cnt" id="soulCnt">0p</span></legend>
     <div id="soulTree"></div>
     <p class="hint">소울 포인트는 환생 시 지급됩니다 — 베이스 클래스 20 / 슈퍼 클래스 50 / 첫 보스 50 / 유물 장착 75 / 언약 10레벨 50 / 20레벨 75.
       트렐로에 적힌 갈래별 합계(공격 6,150 · 방어 4,275 · 유틸 3,975)는 나열된 노드 비용을 더한 값과 맞지 않습니다. 여기 표시되는 합계는 노드 비용을 실제로 더한 값입니다.</p>
   </fieldset>
-  <fieldset>
+  <fieldset class="sec" style="--h:42;--s:70%">
     <legend>마크</legend>
     <div class="grid c3" id="markTiers"></div>
     <div class="grid c2" style="margin-top:11px">
@@ -660,7 +671,7 @@
       Edo의 버프는 속도·방어·회복 쪽이라 내 피해량에는 직접 들어가지 않고, 고른 내용만 빌드 시트에 남습니다.</p>
   </fieldset>
 
-  <fieldset>
+  <fieldset class="sec" style="--h:188;--s:58%">
     <legend>마스터리</legend>
     <div id="mastery"></div>
     <p class="hint">한 슬롯당 마스터리 포인트는 최대 35개라 세 갈래 중 두 갈래까지만 채울 수 있습니다 (가운데 5코스트 노드를 건너뛰면 좌·우 둘 다 가능).
@@ -669,7 +680,7 @@
   </fieldset>
 </div>
 <div class="tabpane" data-p="battle" hidden>
-  <fieldset>
+  <fieldset class="sec" style="--h:212;--s:58%">
     <legend>전투 설정</legend>
     <div class="grid c3">
       <label><span class="k">대상 프리셋</span>
@@ -704,13 +715,13 @@
     <p class="hint">도트는 대상 최대 체력 기준으로 턴마다 자동 적용됩니다. 화상 0.7%/스택, 유령 불꽃 3.85%, 출혈 3%, 중독 스택당 1.
       보스는 이 값의 10%만 받습니다.</p>
   </fieldset>
-  <fieldset>
+  <fieldset class="sec" style="--h:128;--s:46%">
     <legend>파티</legend>
     <div id="party"></div>
     <p class="hint">파티원의 지원 효과는 내 Multi에 합산되고, 기여 피해량은 시뮬레이션 총합에 더해집니다.
       아래 「버프 · 디버프」에서 같은 항목을 또 켜면 이중 계산되니 하나만 쓰세요. 파티가 있으면 시비가 6단계까지 올라 적이 강해집니다.</p>
   </fieldset>
-  <fieldset>
+  <fieldset class="sec" style="--h:354;--s:58%">
     <legend>대상 방어 필드 <span class="cnt">· 직접 입력</span></legend>
     <div class="grid c2">
       <label><span class="k">고정 감산 <span class="en">Defense.Flat</span></span><input type="number" id="dflat" value="0" step="1"></label>
