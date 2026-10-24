@@ -3,7 +3,7 @@
 <style>
   :root{
     --ground:#F4EFE6; --panel:#FBF8F2; --panel-2:#EDE5D7; --line:#D8CCB8;
-    --ink:#241E28; --ink-soft:#5C5262; --ink-faint:#8A7F92;
+    --ink:#241E28; --ink-soft:#5C5262; --ink-faint:#6B6075;
     --gold:#8A6A12; --gold-bright:#C9A227; --corrupt:#96206F;
     --good:#2F6B4F; --warn:#9A4A18;
     --sel:#F6EBCC;
@@ -13,7 +13,7 @@
   @media (prefers-color-scheme: dark){
     :root:not([data-theme="light"]){
       --ground:#15111A; --panel:#1D1822; --panel-2:#251E2C; --line:#3A3043;
-      --ink:#EFE7F2; --ink-soft:#B3A6BC; --ink-faint:#82758C;
+      --ink:#EFE7F2; --ink-soft:#B3A6BC; --ink-faint:#A497AE;
       --gold:#D9B54A; --gold-bright:#F0CE68; --corrupt:#E06BC0;
       --good:#6FCB9F; --warn:#E0964F;
       --sel:#332916;
@@ -23,7 +23,7 @@
   }
   :root[data-theme="dark"]{
     --ground:#15111A; --panel:#1D1822; --panel-2:#251E2C; --line:#3A3043;
-    --ink:#EFE7F2; --ink-soft:#B3A6BC; --ink-faint:#82758C;
+    --ink:#EFE7F2; --ink-soft:#B3A6BC; --ink-faint:#A497AE;
     --gold:#D9B54A; --gold-bright:#F0CE68; --corrupt:#E06BC0;
     --good:#6FCB9F; --warn:#E0964F;
     --sel:#332916;
@@ -91,7 +91,7 @@
   .tile .tctl select{max-width:100%}
   .tile .tn{font-size:11.5px;font-weight:500;color:var(--ink)}
   .tile .tv{display:none}
-  .tile .tnote{font-size:10px;color:var(--ink-faint)}
+  .tile .tnote{font-size:10.5px;line-height:1.4;color:var(--ink-soft)}
   .tile[aria-pressed="true"]{background:var(--sel);border-color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold)}
   .tile[aria-pressed="true"] .tn{color:var(--ink)}
   .tile.blocked{opacity:.42}
@@ -116,7 +116,7 @@
   .chip:hover{border-color:var(--gold);color:var(--ink)}
   .chip[aria-pressed="true"]{border-color:var(--gold);color:var(--ink);background:var(--sel)}
   .chip .n{font-family:"JetBrains Mono",monospace;font-size:10px;color:var(--ink-faint);margin-left:4px}
-  .tile .tmeta{display:flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:9.5px;color:var(--ink-faint);font-family:"JetBrains Mono",monospace}
+  .tile .tmeta{display:flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:10px;color:var(--ink-soft);font-family:"JetBrains Mono",monospace}
   .tile .rar{font-family:"Noto Sans KR",sans-serif;font-style:normal;font-size:9.5px;padding:0 5px;border-radius:2px;border:1px solid currentColor;line-height:15px}
   /* 등급 색도 테마 밝기(--tl)를 따라간다 — 낮엔 진하게, 밤엔 밝게 */
   .r1{--rc:hsl(215 10% var(--tl))} .r2{--rc:hsl(130 42% var(--tl))} .r3{--rc:hsl(210 66% var(--tl))}
