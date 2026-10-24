@@ -102,6 +102,22 @@
   .tile .tctl select,.tile .tctl input{padding:2px 4px;font-size:10px;border-radius:2px}
   .tile .tctl input{width:44px}
   .capmsg{font-size:11px;color:var(--warn);margin:8px 0 0;min-height:16px}
+  /* ── 기어 필터 ── */
+  .gfbar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-bottom:9px}
+  .gfbar input[type=text]{flex:1 1 220px;width:auto;font-family:"Noto Sans KR",sans-serif}
+  .gtog{flex-direction:row;align-items:center;gap:6px;font-size:11.5px;color:var(--ink-soft);cursor:pointer;white-space:nowrap}
+  .gtog input{width:auto;margin:0}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:9px}
+  .chip{font-family:"Noto Sans KR",sans-serif;font-size:11px;padding:3px 10px;border:1px solid var(--line);border-radius:999px;
+    background:var(--panel-2);color:var(--ink-soft);cursor:pointer}
+  .chip:hover{border-color:var(--gold);color:var(--ink)}
+  .chip[aria-pressed="true"]{border-color:var(--gold);color:var(--ink);background:var(--sel)}
+  .chip .n{font-family:"JetBrains Mono",monospace;font-size:10px;color:var(--ink-faint);margin-left:4px}
+  .tile .tmeta{display:flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:9.5px;color:var(--ink-faint);font-family:"JetBrains Mono",monospace}
+  .tile .rar{font-family:"Noto Sans KR",sans-serif;font-style:normal;font-size:9.5px;padding:0 5px;border-radius:2px;border:1px solid currentColor;line-height:15px}
+  .rar.r1{color:#9aa0a6} .rar.r2{color:#5fb36a} .rar.r3{color:#5aa2e6} .rar.r4{color:#b086e6} .rar.r5{color:#d9a93d}
+  .tile .dtag{font-family:"Noto Sans KR",sans-serif;font-size:9.5px;color:var(--gold)}
+  .tile .rgn{font-family:"Noto Sans KR",sans-serif}
 
   /* ── 체크 행 ── */
   .mgroup{margin-bottom:12px}
@@ -413,7 +429,7 @@
       <label><span class="k">전 스탯 보너스</span>
         <select id="growth">
           <option value="10">P1 개편 · 10레벨마다 +1</option>
-          <option value="5">현행 · 5레벨마다 +1</option>
+          <option value="5" selected>현행 · 5레벨마다 +1 (실측)</option>
         </select></label>
     </div>
     <div class="mrow" style="grid-template-columns:1fr auto;margin-top:8px">
@@ -431,6 +447,8 @@
           <option value="tyr">타이래니</option>
         </select></label>
       <label><span class="k">보유 커럽트 파워</span><input type="number" id="cpHave" value="0" min="0" step="5"></label>
+      <label style="flex-direction:row;align-items:center;gap:7px;grid-column:1/-1"><input type="checkbox" id="cpWorks" style="width:auto">
+        커럽트 파워 강화 적용 <span class="en">실측상 현재 미작동 · 켜면 강화는 첫 타에만 들어감</span></label>
       <label><span class="k">노치 소모 스킬 <span class="en">코스트 3+</span></span>
         <select id="notchUse">
           <option value="auto">스킬 코스트로 자동 판정</option>
@@ -441,7 +459,8 @@
     <div class="mrow" style="grid-template-columns:1fr auto;margin-top:8px">
       <span class="nm" id="cpOut">—</span><span class="eff" id="cpNeed">—</span></div>
     <p class="hint">블라스페미에서 <b>코스트 3 이상</b> 스킬은 노치 스택을 전부 소모하므로 그 공격에는 커럽트 파워를 쓸 수 없습니다.
-      커럽트 파워를 쓰는 기어가 <b>다단히트</b> 스킬에 붙으면 <b>타수마다</b> 소모되므로, 필요 CP = 옵션 합계 × 타수입니다.</p>
+      커럽트 파워 강화는 트렐로 기준 <b>다음 한 타(첫 타)</b>에만 들어갑니다. 다단히트면 강화분이 타수로 나뉘어 평균에 반영됩니다.
+      실측(스트라이크 69.1 → 69.1)으로는 강화 자체가 작동하지 않아 기본은 꺼 두었습니다.</p>
   </fieldset>
 
   <fieldset>
@@ -452,6 +471,15 @@
       <label><span class="k">체력 <span class="en">배분</span></span><input type="number" id="END" min="0" value="0"></label>
       <label><span class="k">속도 <span class="en">배분</span></span><input type="number" id="SPD" min="0" value="0"></label>
       <label><span class="k">행운 <span class="en">배분</span></span><input type="number" id="LCK" min="0" value="0"></label>
+    </div>
+    <label style="flex-direction:row;align-items:center;gap:7px;margin-top:10px"><input type="checkbox" id="panelMode" style="width:auto">
+      스탯창 값을 그대로 입력 <span class="en">게임 스탯창 숫자 그대로 · 예) 161+94.6</span></label>
+    <div class="grid c5" id="panelBox" hidden style="margin-top:8px">
+      <label><span class="k">근력 <span class="en">스탯창</span></span><input type="text" id="P_STR" value="0" style="font-family:'JetBrains Mono',monospace"></label>
+      <label><span class="k">신비 <span class="en">스탯창</span></span><input type="text" id="P_ARC" value="0" style="font-family:'JetBrains Mono',monospace"></label>
+      <label><span class="k">체력 <span class="en">스탯창</span></span><input type="text" id="P_END" value="0" style="font-family:'JetBrains Mono',monospace"></label>
+      <label><span class="k">속도 <span class="en">스탯창</span></span><input type="text" id="P_SPD" value="0" style="font-family:'JetBrains Mono',monospace"></label>
+      <label><span class="k">행운 <span class="en">스탯창</span></span><input type="text" id="P_LCK" value="0" style="font-family:'JetBrains Mono',monospace"></label>
     </div>
     <div class="mrow" style="grid-template-columns:1fr;margin-top:8px">
       <span class="nm" id="statOut" style="font-family:'JetBrains Mono',monospace;font-size:11.5px">—</span></div>
@@ -493,13 +521,22 @@
 <div class="tabpane" data-p="gear" hidden>
   <fieldset>
     <legend>기어 <span class="cnt" id="gearCnt">0/4</span></legend>
-    <input type="text" id="gearSearch" placeholder="기어 이름 검색…"
-      style="margin-bottom:9px;font-family:'Noto Sans KR',sans-serif">
+    <div class="gfbar">
+      <input type="text" id="gearSearch" placeholder="기어 이름·효과 검색…">
+      <label class="gtog"><input type="checkbox" id="gearDmgOnly"> 딜에 영향 있는 것만</label>
+      <label class="gtog"><input type="checkbox" id="gearOnOnly"> 착용 중만</label>
+    </div>
+    <div class="chips" id="gearChips"></div>
     <div class="tiles" id="tiles_gear"></div>
+    <p class="hint" id="gearShown" style="margin-top:6px"></p>
     <p class="capmsg" id="cap_gear"></p>
   </fieldset>
   <fieldset>
     <legend>유물 · 인챈트 <span class="cnt" id="artCnt">0/2</span></legend>
+    <div class="gfbar">
+      <div class="chips" id="artChips" style="margin:0"></div>
+      <label class="gtog"><input type="checkbox" id="artDmgOnly"> 딜에 영향 있는 것만</label>
+    </div>
     <div class="tiles" id="tiles_art"></div>
     <p class="capmsg" id="cap_art"></p>
   </fieldset>
@@ -702,7 +739,7 @@
 </details>
 
 <footer>
-  출처: AL_WG_P1 패치 노트 9·12장(스탯 개편, Part 2 대미지 공식), 2026-09-16 밸런스 패치, 아케인 리니지 한국 트렐로(피해량 공식과 계수, 기어·유물·인챈트·슈퍼 클래스 카드).
+  출처: AL_WG_P1 패치 노트 9·12장(스탯 개편, Part 2 대미지 공식), 2026-09-16 밸런스 패치, 10월 밸런스 패치, 할로윈 PT.1 (Fractured Masquerade), 트렐로 10-23 기준, 실측(치명타 10%+행운×0.5 · 소울 트리 2.10배 · 패링 15×(1+근력/40)), 아케인 리니지 한국 트렐로(피해량 공식과 계수, 기어·유물·인챈트·슈퍼 클래스 카드).
   보스는 도트 피해를 10%만 받습니다. 트루 대미지는 DR과 속성 상성을 완전히 무시합니다.
   트렐로에 분모가 적히지 않은 계수(근력, 신비 등)는 0으로 들어오니 직접 채워야 합니다.
 </footer>
@@ -722,7 +759,7 @@ const MODS = [
   {n:"결정화된 가시", opts:[["기본 +1",{flat:1}],["CP 60 소모 +40",{flat:40}]]},
   {n:"피어나는 눈꽃", opts:[["기본 트루 +0.5",{trueFlat:0.5}],["CP 100 소모 +35",{trueFlat:35}]]},
   {n:"세월의 장", opts:[["치명타 +5",{crit:5}],["CP 50 소모 +35",{crit:35}]]},
-  {n:"감염된 신체", note:"대상 착용 시", opts:[["방어력 +10",{reduc:10}],["CP 50 소모 +165",{reduc:165}]]},
+  {n:"감염된 신체", note:"착용자 피해 저항 10 (CP 50 소모 시 165) · 딜 무관", f:{}},
   {n:"쉐도우 건틀렛", note:"흡혈 3% → CP 45 소모 25%", f:{}},
   // ── 숲 ──
   {n:"일곱 잎의 에버시슬", note:"드랍률 1.85배 · 채집가 패시브", f:{}},
@@ -734,7 +771,7 @@ const MODS = [
   {n:"패스파인더 마크", note:"스트라이크 계수가 체력/75로 변경", f:{}},
   {n:"길디드 파우치", note:"피해량이 골드로 치환 (현재 획득 불가)", f:{}},
   {n:"패러시틱 리치", note:"입힌 피해 2%만큼 아군 회복", f:{}},
-  {n:"크리스탈라이즈드 스타", note:"치명타마다 행운 +10", f:{crit:10}, max:5, unit:"스택"},
+  {n:"크리스탈라이즈드 스타", note:"치명타마다 행운 +10 (3턴, 최대 5회)", f:{}, stf:{LCK:10}, max:5, unit:"스택"},
   {n:"엘리멘탈 인퓨저", note:"신비·화염·얼음·저주 스킬 턴당 +10%", f:{multi:10}, max:3, unit:"턴"},
   // ── 사막 ──
   {n:"크리스탈 스패어", note:"치명타 확률 +5 · 치명타 피해 +5%", f:{crit:5, critDmg:5}},
@@ -744,9 +781,9 @@ const MODS = [
   {n:"밴드 오브 크러싱 포스", opts:[["방어 중인 적 +25%",{multi:25}],["2턴 지속 +10%",{multi:10}],["둘 다 +35%",{multi:35}]]},
   {n:"스톤 브랜드", note:"소환수 Stone Skin (받는 피해 −60%) · 영구 지속, 쿨타임 999", f:{}},
   {n:"골렘 룬 코어", note:"샌드 골렘 소환", f:{}},
-  {n:"래미즈칸 아이돌", note:"막기·패링 후 1턴", f:{multi:15}},
-  {n:"매드시어 코덱스", note:"마법·화염·얼음·저주 공격 시 확률 디버프", f:{}},
-  {n:"임퓨어 크라운", note:"중독 부여 시 1턴 중독 추가", f:{multi:5}},
+  {n:"래미즈칸 아이돌", note:"막기·패링 후 1턴 +15% · 최대 2스택", f:{multi:15}, max:2, unit:"스택"},
+  {n:"매드시어 코덱스", note:"마법·화염·얼음·저주 공격 시 25% 무작위 디버프 · 시전 QTE 난이도 상승", f:{}},
+  {n:"임퓨어 크라운", note:"중독 부여 시 1턴 추가 · 개발 문서상 +5% (트렐로엔 미기재)", f:{multi:5}},
   {n:"더 라스트 스트로우", note:"5턴마다 은신 1턴", f:{}},
   {n:"임뷰드 체인", note:"버그로 효과 없음", f:{}},
   {n:"딜리케이트 펄스", note:"전투 승리 시 골드", f:{}},
@@ -754,9 +791,9 @@ const MODS = [
   // ── 딥루트 캐노피 ──
   {n:"샤드 오브 블라이트", note:"어둠 속성 스킬 +20%", f:{multi:20}},
   {n:"익스페다이트 앤클렛", note:"God Speed · 속도 +30", f:{}},
-  {n:"위키드 크라운", note:"대상 착용 · 도트 피해 한정", f:{reduc:566.67}},
-  {n:"트래블러 램프", note:"전투 시작 시 에너지 +1, 전체 취약 3턴", f:{multi:20}},
-  {n:"코아귤레이트 핑거 네일", note:"대상 착용 · 턴당 방어 +1.5%", f:{reducMul:1.015}, max:10, unit:"턴"},
+  {n:"위키드 크라운", note:"중독 면역 · 디버프 피해 −15% · 물리·신비 스킬이 어둠 속성으로 (샤드 오브 블라이트와 연계)", f:{}},
+  {n:"트래블러 램프", note:"전투 시작 시 에너지 +1 · 전체 취약 3턴 (취약 동안 +20%)", f:{multi:20}},
+  {n:"코아귤레이트 핑거 네일", sim:"coag", note:"턴마다 모든 스탯 +1.5 (최대 10턴) · 체력은 피해 저항 1.5%로", f:{}, stf:{STR:1.5, ARC:1.5, SPD:1.5, LCK:1.5}, max:10, unit:"턴"},
   {n:"상권 팽", note:"25% 확률 10% 흡혈", f:{}},
   {n:"커스드 브랜드", note:"소환수 · 디버프 제거당 피해 +5%", f:{multi:5}, max:5, unit:"개"},
   {n:"팬텀 우즈", note:"Gluttony · 저주 아귀 부여", f:{}},
@@ -764,17 +801,17 @@ const MODS = [
   {n:"임페리얼 헤드밴드", note:"소환수 자폭 · 최대 체력 2배 피해", f:{}},
   {n:"블레이징 브랜드", note:"소환수 피격 시 화상 3턴", f:{}},
   {n:"불칸 너클", note:"화염 속성 스킬 +15%", f:{multi:15}},
-  {n:"몰튼 캐라피스", note:"대상 착용 · 체력 40% 이하", f:{reduc:17.65}},
-  {n:"마그마 참", note:"대상 착용 · 화염 피해 −10%", f:{reduc:11.11}},
+  {n:"몰튼 캐라피스", note:"체력 40% 이하일 때 피해 저항 30% · 딜 무관", f:{}},
+  {n:"마그마 참", note:"이동 속도 +15% · 받는 화염 피해 −10% · 딜 무관", f:{}},
   // ── 퀘스트 / NPC ──
   {n:"리썰 블랙잭", opts:[["16·19 공격력 +10%",{multi:10}],["15·17 공격력 +5%",{multi:5}],["4 공격력 −10%",{multi:-10}]]},
-  {n:"티어 블러드 크리스탈", note:"출혈 적용당 치명타 +5", f:{crit:5}, max:5, unit:"스택"},
+  {n:"티어 블러드 크리스탈", note:"출혈 부여마다 5턴 치명타 +5 · 피해 저항 5 · 무한 중첩", f:{crit:5}, max:30, unit:"스택"},
   {n:"에버비팅 드럼", note:"20% 확률로 적 전체에 입힌 피해 25% · 적 2명 이상", opts:[["기대값 ×1.05",{finalMul:1.05}],["발동 ×1.25",{finalMul:1.25}],["미발동",{}]]},
   {n:"드래곤 메모이르", note:"스트라이크 횟수로 출혈·골절 부여", f:{}},
   {n:"나르타나 리프", note:"최대 체력 −25% · 아웃고잉 힐 +75%", f:{}},
   // ── 보스 드랍 ──
   {n:"젤라또 밴드", note:"슬라임 소환", f:{}},
-  {n:"더스트 데빌 아이", note:"5% 확률 3추가타", f:{}},
+  {n:"더스트 데빌 아이", note:"5% 확률 3추가타 (추가타 기본·계수 미공개)", f:{}},
   {n:"오픈 핸드", note:"디버프 지속시간 턴당 −2", f:{}},
   {n:"더 스몰리스트 볼더", note:"볼더 소환 · 피해 전부 흡수", f:{}},
   {n:"이로디드 블레이드", note:"10% 확률 에너지 강탈", f:{}},
@@ -782,25 +819,35 @@ const MODS = [
   {n:"블레이징 퍼포레이터", note:"화상 피해 무효 + 절반 회복", f:{}},
   {n:"프로스트번드 룬", note:"30% 확률 추위·화상 부여 · 추위와 화상이 둘 다 걸린 적 +7.5%", f:{multi:7.5}},
   {n:"프테라 하트", note:"전투 시작 시 전원 독 3스택", f:{}},
-  {n:"데스비크 대거", note:"치명타 시 추가 단검 (기본×치명타×0.15, 디버프 시 0.25)", f:{}},
-  {n:"에스펙트 오브 맬라답션", note:"대상 착용", opts:[["같은 속성 −35%",{multi:-35}],["다른 속성 +30%",{multi:30}]]},
+  {n:"데스비크 대거", note:"치명타 시 단검: 타당 기본 피해 × 치명타 배수 × 0.15 (디버프 대상 0.25) · 버프·치명타 미적용", opts:[["대상 디버프 없음 ×0.15",{dagger:0.15}],["대상 디버프 있음 ×0.25",{dagger:0.25}]]},
+  {n:"에스펙트 오브 맬라답션", note:"피격 속성 피해 저항 25% · 다른 속성 받는 피해 +30% · 딜 무관", f:{}},
   {n:"테인티드 퀴버", note:"첫 공격 분열 3턴 확정 · 이후 15% 확률 에너지 1 감소", f:{}},
   {n:"배인글로리우스 로켓", sim:"vain", opts:[["1턴차 +15%",{multi:15}],["2턴차 +10%",{multi:10}],["3턴차 +5%",{multi:5}]]},
   {n:"임뷰먼트 레일쿼리", note:"소환수가 인챈트 효과를 받음", f:{}},
   {n:"디바인 프로미스", note:"아군 피해 경감 10% 제공", f:{}},
   {n:"포커스드 마인드", sim:"medi", note:"명상 다음 턴 (받는 피해 +15%)", f:{multi:20}},
   {n:"보우 오브 루인", note:"저장한 피해로 폭발", f:{}},
-  {n:"프로즌 디아뎀", note:"얼음 스킬당 치명타 +5", f:{crit:5}, max:10, unit:"스택"},
+  {n:"프로즌 디아뎀", note:"얼음 공격마다 2턴 치명타 +5 (중첩) · 추위를 새로 걸면 +10 (중첩 불가)", f:{crit:5}, max:10, unit:"스택"},
   // ── 이벤트 ──
   {n:"엘레멘튜리 리소넌스", note:"기어 색 = 스킬 속성", f:{multi:10}},
   {n:"프로스티 토퍼", note:"스노우맨 소환", f:{}},
   {n:"스노브", note:"피격 시 전체 추위 + 최대 체력 10% 피해", f:{}},
-  {n:"레빗 펠트", note:"대상 착용 · 연속 공격당 방어 +5%", f:{reducMul:1.05}, max:6, unit:"스택"},
-  {n:"에그 셸멧", note:"대상 착용 · 쉴드 파괴 후 방어 +10%", f:{reducMul:1.10}},
+  {n:"레빗 펠트", note:"연속 공격마다 받는 피해 −5% (최대 30%) · 딜 무관", f:{}},
+  {n:"에그 셸멧", note:"시작 시 최대 체력 10% 쉴드 · 깨지면 영구 피해 저항 10 · 딜 무관", f:{}},
   {n:"초콜릿 에그", note:"아군 회복 액티브", f:{}},
   {n:"파티 에그", note:"Egg Throw · 무작위 디버프 2개", f:{}},
   {n:"글래밍 캐럿", note:"턴당 치명타 +1, 6턴", f:{crit:1}, max:6, unit:"턴"},
-  {n:"래빗츠 풋", note:"속도·행운 +5 · 매턴 33% 확률 버프/저주/헥스", f:{}}
+  {n:"래빗츠 풋", note:"매 턴 33% 확률로 속도·행운 +5% / 저주 1턴 / 헥스 1 (자신)", f:{}},
+  // ── 할로윈 (Fractured Masquerade) ──
+  {n:"위치 브룸", note:"3턴 연속 속도 버프 → 은신 1턴 + 다음 공격 치명타 +33%", f:{crit:33}},
+  {n:"위치 캡", note:"턴 시작 30% 확률 약화판 혼합물 투척 · 1회차·이후 3회마다 분열 3턴", opts:[["대상 분열 (저항 무효)",{affSet:1}],["분열 없음",{}]]},
+  {n:"스테인디드 마스크", note:"출혈 5번 부여마다 자신·대상에게 출혈 3턴", f:{}},
+  {n:"헌티드 클로스", note:"전투 시작 실명 5턴(저항 무시) · 내게 실명이 있으면 적 실명 스택 ÷2 만큼 치명타 (최대 25)", f:{crit:0.5}, max:50, unit:"적 실명 스택"},
+  {n:"스파이더 헤어클립", note:"체력 7.5% 잃을 때마다 거미 (최대 2) · 내 턴 시작 시 기본 7.5, 신비/75, 약화 2턴 → 스킬 목록에 추가", f:{}},
+  {n:"펌킨 가츠", note:"한 턴 최대 체력 7.5% 초과 피격 시 공격자에게 무작위 디버프 3종 · 30% 초과면 10% 회복", f:{}},
+  {n:"엑토플라즈믹 젤", note:"받은 피해 저항만큼 턴당 에너지 확률 (아군 부여 1.5배, 최대 75%)", f:{}},
+  {n:"투스 앤 네일", note:"최고 코스트 슈퍼 클래스 스킬 사용 시 그 턴 피해량 버프의 절반만큼 피해 저항", f:{}},
+  {n:"코일드 콥웹스", note:"2코 이하 스킬마다 구속 · 5턴 쌓이면 1턴 봉인 후 3코 이상 스킬이 처음 쓸 때까지 3코 고정", f:{}}
 ]},
 {g:"유물 · 인챈트", key:"art", tiles:true, cap:2, items:[
   // ── 장착형 유물 ──
@@ -818,10 +865,17 @@ const MODS = [
   {n:"셀레스티얼 엠블럼", note:"아스트라 마크 획득용", f:{}},
   // ── 인챈트 ──
   {n:"인페르노", note:"화상 걸린 적 +20%", f:{multi:20}},
-  {n:"리퍼", note:"대상 체력 비례 최대", f:{multi:25}},
-  {n:"커스드", opts:[["저주 대상 +30%",{multi:30}],["분열 대상 +20%",{multi:20}]]},
-  {n:"스펙트랄", note:"50% 확률 방어력 절반 무시", f:{reducMul:0.5}},
-  {n:"프로스트", note:"추위 대상 폭발 기본 10", f:{}},
+  {n:"리퍼", note:"발동 시 대상 체력 비례 최대 +25% · 입힌 피해 10% 회복 확률", f:{multi:25}},
+  {n:"커스드", note:"16.6% 무작위 디버프 3턴 · 저주/분열 대상 보너스는 높은 쪽 하나만", opts:[["저주 대상 +30%",{multi:30}],["분열 대상 +20%",{multi:20}],["둘 다 없음",{}]]},
+  {n:"스펙트랄", note:"리워크: 25% 확률 필드 효과 1턴 연장 (최대 2턴) · 5턴간 프록 계수 +10% (최대 50%)", f:{}},
+  {n:"고스트스틸", note:"15% 확률 에너지 탈취 → 성공마다 피해량 +5% · 저항 무시 12% (최대 5)", f:{multi:5, reducMul:0.88}, max:5, unit:"스택"},
+  {n:"레이스", note:"적중마다 헌티드 (기본 15 이상이면 2턴) · 대상 받는 피해 +3% / 주는 피해 −1% (최대 5)", f:{multi:3}, max:5, unit:"헌티드"},
+  {n:"스푸키드", note:"턴 시작: 에너지 +1·체력 5% 회복 또는 에너지 −1·체력 5% 손실 (에너지 1당 좋은 쪽 +5%)", f:{}},
+  {n:"아이보리", note:"매 턴 3턴간 모든 스탯 +4% (체력은 피해 저항) · 턴당 10% 에너지 +1", f:{}, stp:{STR:4, ARC:4, SPD:4, LCK:4}},
+  {n:"하이에말", note:"25% 확률 약화·추위 2턴 · 10% 확률 기절 1턴", f:{}},
+  {n:"블레스드", note:"확률로 빛 스택 · 3스택 폭발 최대 체력 2% + 분열 2턴 (턴당 1회)", f:{}},
+  {n:"라이프송", note:"공격·치유 시 확률로 인커밍·아웃고잉 힐 +20% (3턴)", f:{}},
+  {n:"프로스트", note:"확률로 추위 2턴 · 추위 대상 치명타 시 폭발 10 (처치 불가)", f:{}},
   {n:"폴라리스", note:"커럽트 에너지 소모 +20% · 리코일 −20% · CP 획득 +15%", f:{}},
   {n:"옥탄티스", note:"커럽트 에너지 소모 −20% · 리코일 −30%", f:{}},
   {n:"스카이블레이즈", note:"에너지 획득 +30% · 소모 −20% · 리코일 −30% · CP +15%", f:{}},
@@ -846,11 +900,12 @@ const MODS = [
   {n:"약화 (Weakened)", note:"내가 걸린 경우", f:{multi:-20}},
   {n:"분열 (Sundered)", note:"저항 무효 → Affinity 1", f:{affSet:1}},
   {n:"저주 아귀 (Cursemaw)", note:"스택당 방어 −5%", f:{reducMul:0.95}, max:10, unit:"스택"},
-  {n:"명상 반동", note:"포커스드 마인드 · 받는 피해 +15%", f:{multi:15}}
+  {n:"명상 반동", note:"포커스드 마인드 · 받는 피해 +15%", f:{multi:15}},
+  {n:"헌티드 (Haunted)", note:"스택당 받는 피해 +3%, 최대 5 (레이스 인챈트)", f:{multi:3}, max:5, unit:"스택"}
 ]},
 {g:"종족", items:[
   {n:"Inferion (공격, 화상 보유)", f:{multi:20}},
-  {n:"Boreas (공격)", note:"아이스블러드 스택당 +10%, 최대 50%", f:{multi:10}, max:5, unit:"스택"},
+  {n:"Boreas (공격)", note:"아이스블러드 스택당 +7%, 최대 35%", f:{multi:7}, max:5, unit:"스택"},
   {n:"Corvolus (마법·신성)", note:"패치노트 기재 부호 반전 버그", f:{multi:-10}},
   {n:"Inferion (대상 방어, 화상)", f:{reduc:17.65}},
   {n:"Boreas (대상 방어) 7스택", note:"실질 약 35% 감소", f:{reduc:53.85}},
@@ -894,7 +949,7 @@ const CLASSES = {
 ],k:[
   {n:"Crushing Strike", b:7, h:1, c:1, cd:4, e:"물리", s:[["STR",50]]},
   {n:"Party Table", b:1.5, h:6, c:2, cd:5, e:"물리", s:[["STR",50]], x:"인접 대상까지 (숙련 시 전체)"},
-  {n:"Burst Combo", b:3, h:4, c:2, cd:6, e:"물리", s:[["STR",50],["STR",75]], x:"첫타 근력/50, 이후 근력/75"}
+  {n:"Burst Combo", b:3, h:4, c:2, cd:6, e:"물리", s:[["STR",50]], parts:[[3,1,[["STR",50]]],[3,3,[["STR",75]]]], x:"1타 근력/50 · 2~4타 근력/75 (자동 분리 계산)"}
 ]},
 "다크레이서 (악·주먹)":{p:[
   {n:"Darkborne", note:"모든 스킬 +15%", f:{multi:15}},
@@ -922,7 +977,7 @@ const CLASSES = {
   {n:"Impaling Strike", b:14, h:1, c:1, cd:4, e:"물리", s:[["STR",80]]},
   {n:"Flowing Dance", b:1.75, h:12, c:3, cd:6, e:"물리", s:[["STR",75],["SPD",75]]},
   {n:"Simple Domain (반사)", b:20, h:1, c:2, cd:6, e:"물리", s:[["STR",60]], x:"기본 20 고정 (10월 패치) · 근접 공격만 반사 · 적 전체 도발 2턴 (마스터리: 5턴, 쿨타임 4)"},
-  {n:"Parry (가드 시 패링)", b:15, h:1, c:0, cd:0, e:"물리", s:[["STR",40]], x:"실측 15 × (1 + 근력/40) · 배율·치명타·Flat 미적용 — 보정 전부 끄고 볼 것 (트렐로: 기본 5, 마스터리 12)"}
+  {n:"Parry (가드 시 패링)", b:15, h:1, c:0, cd:0, e:"물리", s:[["STR",40]], raw:"all", x:"실측 15 × (1 + 근력/40) · 배율·치명타·Flat 자동 제외 (트렐로: 기본 5, 마스터리 12)"}
 ]},
 "버서커 (악·검)":{p:[
   {n:"Bloodlust", sim:"blood", note:"공격·피격마다 스택 · 스택당 +5% · 분노가 아니면 매 턴 1 감소 · 최대 12", f:{multi:5}, max:12, unit:"스택"},
@@ -974,7 +1029,7 @@ const CLASSES = {
 ],k:[
   {n:"Slash Barrage", b:17, h:1, c:2, cd:5, e:"물리", s:[["STR",75]]},
   {n:"Dagger Spread", b:10, h:1, c:1, cd:5, e:"물리", s:[["STR",65]]},
-  {n:"Poison Trap", b:5, h:1, c:1, cd:7, e:"독", s:[["SPD",40],["LCK",30]]}
+  {n:"Poison Trap", b:5, h:1, c:1, cd:7, e:"독", s:[["SPD",40],["LCK",30]], raw:"multi", x:"플레이어 피해량 버프 미적용 · 적이 근접 공격할 때 발동"}
 ]},
 "어쌔신 (악·단검)":{p:[
   {n:"은신 중 Stealth Strike", note:"피해량 2배", f:{finalMul:2}},
@@ -996,7 +1051,7 @@ const CLASSES = {
   {n:"마스터리 Grand Guard", note:"방어 버프 40%↑ 시 +10%", f:{multi:10}},
   {n:"Crucible 강화", note:"방어력 버프만큼 피해량 버프", f:{multi:40}}
 ],k:[
-  {n:"Crucible", b:8, h:2, c:2, cd:4, e:"신성", s:[["STR",0]], x:"계수 분모 미표기"},
+  {n:"Crucible", b:9, h:3, c:2, cd:4, e:"신성", s:[["STR",65]], parts:[[9,1,[["STR",65]]],[3.6,2,[["STR",90]]]], x:"9 (근력/65) + 3.6×2 (근력/90) · 첫 충격파 취약 2턴"},
   {n:"Blinding Vow (버프)", b:0, h:1, c:2, cd:6, e:"신성", s:[]},
   {n:"Sanctified Protection (버프)", b:0, h:1, c:3, cd:6, e:"신성", s:[], x:"더 이상 깨지지 않음"}
 ]},
@@ -1069,6 +1124,61 @@ const SUBCLASSES = {
 };
 const subOf = () => SUBCLASSES[$("sub").value] || SUBCLASSES["— 없음 —"];
 
+/* ══════════ 2-b'. 베이스 클래스 (슈퍼 클래스 무기 계열로 자동 결정) ══════════ */
+const BASECLASSES = {
+"주먹":{n:"무술가", p:[
+  {n:"[베이스] Fighting Prowess", note:"장갑류 무기 착용 시 +15%", f:{multi:15}},
+  {n:"[베이스] Iron Body", note:"방어 시 받는 피해 감소", f:{}}],
+ k:[{n:"[베이스] Barrage", b:3.3, h:3, c:2, cd:5, e:"물리", s:[["STR",75]]},
+    {n:"[베이스] Endure (버프)", b:0, h:1, c:1, cd:5, e:"물리", s:[], x:"2턴 받는 피해 −25%"}]},
+"검":{n:"전사", p:[
+  {n:"[베이스] Sword Training", note:"검 착용 시 +10%", f:{multi:10}},
+  {n:"[베이스] Strength Training", note:"막기 QTE 확대", f:{}}],
+ k:[{n:"[베이스] Double Slash", b:5, h:2, c:2, cd:4, e:"물리", s:[["STR",75]]},
+    {n:"[베이스] Pommel Strike", b:7, h:1, c:1, cd:3, e:"물리", s:[["STR",75]], x:"확률 기절 1턴"}]},
+"창":{n:"슬레이어", p:[
+  {n:"[베이스] Spear Training", note:"창 착용 시 +10%", f:{multi:10}},
+  {n:"[베이스] Swift Fighter", note:"회피 시 3턴 속도 +20% (최대 30%)", f:{}, stp:{SPD:20}}],
+ k:[{n:"[베이스] Serpent Strike", b:6, h:1, c:1, cd:4, e:"물리", s:[["STR",75]]},
+    {n:"[베이스] Triple Strike", b:3.33, h:3, c:2, cd:4, e:"물리", s:[["STR",75]]}]},
+"단검":{n:"도둑", p:[
+  {n:"[베이스] Thievery · Agile", note:"골드 · 이동 속도", f:{}}],
+ k:[{n:"[베이스] Stab", b:6, h:1, c:1, cd:2, e:"물리", s:[["STR",75]], x:"치명타 확률 +40 보정 · 출혈 2턴"},
+    {n:"[베이스] Pocket Sand", b:8, h:1, c:2, cd:3, e:"물리", s:[["STR",75]], x:"실명 3턴"}]},
+"도끼":{n:"머루더", p:[
+  {n:"[베이스] Axe to Grind", note:"가장 최근에 나를 때린 적에게 +25%", f:{multi:25}},
+  {n:"[베이스] Fleshchipper", note:"적의 방어(가드) 무시", f:{}}],
+ k:[{n:"[베이스] Cleave", b:16, h:1, c:2, cd:3, e:"물리", s:[["STR",75]], x:"적 전체 · 분모는 베이스 공통값 /75 (트렐로 추정 /70)"},
+    {n:"[베이스] Grudge (도발)", b:0, h:1, c:1, cd:6, e:"물리", s:[], x:"도발 3턴"}]},
+"망치":{n:"보초자", p:[
+  {n:"[베이스] High Pressure", note:"전투 시작 시 적 전체 압박 3턴", f:{}},
+  {n:"[베이스] Hunker Down", note:"가드 시 3턴 피해 저항 15%", f:{}}],
+ k:[{n:"[베이스] Lookout", b:9, h:1, c:2, cd:5, e:"물리", s:[["STR",75]], x:"아군 지정 · 대신 맞고 반격"},
+    {n:"[베이스] Prepare (버프)", b:0, h:1, c:1, cd:4, e:"물리", s:[], x:"다음 공격 취약 2턴 + 압박 3턴"}]},
+"지팡이":{n:"마법사", p:[
+  {n:"[베이스] Scholar Training", note:"지팡이 착용 시 +5%", f:{multi:5}},
+  {n:"[베이스] Coward", note:"어그로 감소 · 탈출 확률 증가", f:{}}],
+ k:[]}
+};
+const baseOf = () => { const m = /·(주먹|단검|검|창|도끼|망치|지팡이)\)/.exec($("cls").value); return (m && BASECLASSES[m[1]]) || {n:"", p:[], k:[]}; };
+
+/* 기어가 주는 스킬 (끼면 스킬 목록에 붙는다) — 소환수 공격은 내 피해 버프를 안 받는 것으로 계산 */
+const GEAR_SKILLS = {
+"스파이더 헤어클립":[{n:"[기어] 거미 공격 (내 턴 시작)", b:7.5, h:1, c:0, cd:0, e:"물리", s:[["ARC",75]], raw:"multi", x:"거미 소환수 · 약화 2턴 · 거미 2마리면 2배"}],
+"젤라또 밴드":[{n:"[기어] 슬라임 Smack", b:14, h:1, c:0, cd:0, e:"물리", s:[["ARC",50]], raw:"multi", x:"슬라임 소환수"},
+               {n:"[기어] 슬라임 Acid Spit", b:4, h:1, c:4, cd:2, e:"독", s:[["ARC",75]], raw:"multi", x:"중독 2턴"}],
+"골렘 룬 코어":[{n:"[기어] 골렘 Smash", b:10, h:1, c:0, cd:0, e:"물리", s:[["ARC",0]], raw:"multi", x:"샌드 골렘 · 계수 분모 미표기"},
+                {n:"[기어] 골렘 Sand Eruption", b:22, h:1, c:3, cd:7, e:"물리", s:[["ARC",0]], raw:"multi", x:"메인+양옆 · 취약1·약화2·구속4 · 계수 분모 미표기"},
+                {n:"[기어] 골렘 Dust Burst", b:6, h:3, c:2, cd:5, e:"물리", s:[["ARC",0]], raw:"multi", x:"실명 대상 기절 · 계수 분모 미표기"}],
+"프로스티 토퍼":[{n:"[기어] 스노우맨 Snowball", b:4, h:1, c:0, cd:0, e:"얼음", s:[["ARC",0]], raw:"multi", x:"확률 추위·실명 1턴 · 계수 분모 미표기"}],
+"파티 에그":[{n:"[기어] Egg Throw", b:5, h:1, c:2, cd:6, e:"물리", s:[["SPD",80]], x:"무작위 디버프 2종 · 속도 +7.5%"}]
+};
+function gearSkills(){
+  const out = [];
+  document.querySelectorAll('#tiles_gear .tile[aria-pressed="true"] .tn').forEach(t => (GEAR_SKILLS[t.textContent] || []).forEach(x => out.push(x)));
+  return out;
+}
+
 /* ══════════ 2-c. 무기 계열 ══════════ */
 const WEAPONS = {
 "— 없음 —":            {f:{}, note:""},
@@ -1087,7 +1197,9 @@ const WEAPONS = {
 "사암 (핸다콘다)":      {f:{}, note:"20% 확률 분열 부여 · 방패는 받는 피해 −30% · 샤드 3"},
 "아이스린드":          {f:{multi:20}, note:"추위 걸린 적에게 +20% · 10% 확률 추위 부여"},
 "아이보리":            {f:{crit:15}, note:"치명타 확률 +15% (방패는 +5%)"},
-"곡괭이":              {f:{}, note:"광물 적 최대 체력 50% 삭제 · 그 외엔 피해 불가"}
+"곡괭이":              {f:{}, note:"광물 적 최대 체력 50% 삭제 · 그 외엔 피해 불가"},
+"까까 (할로윈)":        {f:{multi:1}, max:25, unit:"재생%×2", note:"체력 재생 1.5배 · 재생%의 2배만큼 피해 증가 (최대 25%)"},
+"고스트그레이브 (할로윈)":{f:{multi:10}, note:"실명 걸린 적 +10% · 20% 확률 실명 3턴 · 최근 2턴 체력% 변화량 비례 추가 피해 (수치 미공개)"}
 };
 
 /* ══════════ 2-d. 갑옷 ══════════
@@ -1142,7 +1254,8 @@ const RACES = {
 "아모루스":         {STR:4, ARC:4, END:4, SPD:4, LCK:4},
 "그닉스":           {STR:4, ARC:1, END:8, SPD:1, LCK:1},
 "시아":             {STR:3, ARC:3, END:1, SPD:1, LCK:2},
-"인페리온":         {STR:3, ARC:1, END:4, SPD:1, LCK:1}
+"인페리온":         {STR:3, ARC:1, END:4, SPD:1, LCK:1},
+"펌펄프 (할로윈)":  {STR:1, ARC:4, END:4, SPD:1, LCK:2}
 };
 
 /* ══════════ 2-f. 기어 고정 스탯 ══════════ */
@@ -1172,11 +1285,16 @@ const GEAR_STATS = {
 "프로스트번드 룬":{ARC:4}, "프테라 하트":{ARC:2, END:2}, "데스비크 대거":{LCK:2, STR:2},
 "테인티드 퀴버":{ARC:2, SPD:1}, "임뷰먼트 레일쿼리":{ARC:5}, "디바인 프로미스":{ARC:3},
 "보우 오브 루인":{END:4}, "프로스티 토퍼":{ARC:2}, "스노브":{END:2},
-"초콜릿 에그":{LCK:1}, "파티 에그":{STR:1}, "래빗츠 풋":{LCK:2, SPD:5}
+"초콜릿 에그":{LCK:1}, "파티 에그":{STR:1}, "래빗츠 풋":{LCK:7, SPD:5},
+"위치 브룸":{ARC:1, SPD:3}, "위치 캡":{ARC:3, SPD:1}, "스테인디드 마스크":{STR:2, END:2},
+"헌티드 클로스":{LCK:1, SPD:2}, "스파이더 헤어클립":{ARC:2, SPD:2}, "펌킨 가츠":{END:4},
+"엑토플라즈믹 젤":{END:2}, "투스 앤 네일":{STR:1, END:3}, "코일드 콥웹스":{END:3, LCK:1},
+// 유물 고정 스탯 (트렐로 기재값 — 감정 티어에 따라 다를 수 있음)
+"스텔리안 코어":{ARC:11.5}, "카오스 오브":{ARC:6, LCK:5}, "시프팅 아워글래스":{SPD:4, LCK:4},
+"해븐즈 어토리티":{STR:4.5, ARC:5}, "파라녹시안 크럭스":{END:10}, "에이션트 인시그니아":{END:8}
 };
 // 상대가 착용하는 기어 — 내 스탯에는 더하지 않는다
-const TARGET_GEAR = new Set(["마그마 참","몰튼 캐라피스","위키드 크라운","에그 셸멧","레빗 펠트",
-                             "코아귤레이트 핑거 네일","에스펙트 오브 맬라답션","감염된 신체"]);
+const TARGET_GEAR = new Set();   // 기어 탭은 전부 내가 낀 기어 — 방어 효과는 딜과 무관해서 표시만 한다
 
 /* ══════════ 2-g. 스킬 특수능력 · 부여 디버프 ══════════
    sp: 조건부 능력(체크박스로 켬) | deb: 적중 시 부여하는 디버프        */
@@ -1187,11 +1305,15 @@ const SKILL_EXTRA = {
 "Crushing Strike":       {sp:[["새 디버프 부여 (Crusher 3턴)", {multi:7}]]},
 "Party Table":           {deb:[["취약",2],["출혈",2]], sp:[["대상 취약 상태 · 마지막 타 +20%", {multi:20}]]},
 "Burst Combo":           {sp:[["첫타 근력/50 · 이후 근력/75", {}]]},
-"Dark Smite":            {deb:[["약화",2]]},
+"Dark Smite":            {always:{crit:25}, deb:[["약화",2]]},
+"[베이스] Stab":         {always:{crit:40}, deb:[["출혈",2]]},
+"[베이스] Serpent Strike":{deb:[["출혈",3]]},
+"[베이스] Pocket Sand":  {deb:[["실명",3]]},
+"[베이스] Cleave":       {sp:[["Axe to Grind (직전에 나를 때린 적) +25%", {multi:25}]]},
 "Darkcore Eruption":     {sp:[["소모한 다크 코어 1개당 +5%", {multi:5}]]},
 "Head Splitter":         {always:{reducMul:0.5}, deb:[["취약",2]]},
 "Carnage":               {sp:[["추가 소모 에너지 1당 히트당 기본 +0.4 (기본 칸에 직접 입력)", {}]]},
-"Impaling Strike":       {deb:[["출혈",2]]},
+"Impaling Strike":       {always:{crit:20}, deb:[["출혈",2]]},
 "Flowing Dance":         {sp:[["Unending Flow 연속 스택", {multi:5}]]},
 "Light Burst":           {sp:[["마스터리 강화 +30%", {multi:30}]]},
 "Discharge":             {sp:[["치명타 시 기절", {}]]},
@@ -1289,7 +1411,7 @@ const WEAPON_SLOTS = {
 "페러스 (기본)":6, "블랙스틸":4, "제이드":5, "대검 (Great Sword)":6, "용골 (야툴)":3,
 "역병 (토리안)":3, "흑혈통 (메트롬 베셀)":2, "태양 (세라폰)":3, "태초 (핸다콘다)":4,
 "사암 (핸다콘다)":3, "아이스린드":3, "아이보리":4, "코어알로이":5, "바스틱 글래이브":4,
-"슬라임 (킹 슬라임)":3, "곡괭이":0, "— 없음 —":0
+"슬라임 (킹 슬라임)":3, "곡괭이":0, "— 없음 —":0, "까까 (할로윈)":3, "고스트그레이브 (할로윈)":3
 };
 
 /* ══════════ 2-k. 종족 스킬 · 패시브 ══════════
@@ -1394,11 +1516,61 @@ const RACE_SK = {
   {n:"[종족] Inferion (공격, 화상 보유)", note:"P2 환산 +20%", f:{multi:20}}],
  k:[{n:"[종족] 인페르노 리프트", b:12,h:1,c:3,cd:9,e:"화염",s:[["STR",75],["ARC",75]],x:"분열 2턴 · 자신과 대상에게 화상 3턴"}]},
 
-"오피마르 (6%) ":{p:[],k:[]}
+"오피마르 (6%) ":{p:[],k:[]},
+
+"펌펄프 (할로윈)":{p:[
+  {n:"[종족] Flaming Touch", note:"적중 시 15% 확률 화상 2턴", f:{}},
+  {n:"[종족] Burning Care", note:"적 화상 1스택당 아웃고잉 힐 +5% (최대 25%)", f:{}}],
+ k:[{n:"[종족] Gourd Roll", b:3, h:4, c:2, cd:7, e:"화염", s:[["STR",0]], x:"계수 미공개 · 화염이면 타마다 화상 3턴, 자연이면 체력 낮은 아군 회복 · 명상하면 화염↔자연 전환"},
+    {n:"[종족] Root Lantern (버프)", b:0, h:1, c:3, cd:9, e:"화염", s:[], x:"화염: 화상 부여 + 화상 수만큼 2턴 버프 · 자연: 아군 재생·피해 감소"}]}
 };
 const raceOf = () => RACE_SK[$("race").value] || {p:[], k:[]};
 
 const ELEM_DEFAULT = 1;
+
+/* ══════════ 2-l. 기어 지역 · 희귀도 (트렐로 10-23) ══════════ */
+const GEAR_REGION = {
+"시든 숲":["행운의 뿔","결정화된 가시","피어나는 눈꽃","세월의 장","감염된 신체","쉐도우 건틀렛"],
+"숲":["일곱 잎의 에버시슬","아부스타 티어","섀터드 클락 핸드","포레스트 참","짱짱 큰 짱돌","스포어 루트","패스파인더 마크","길디드 파우치","패러시틱 리치","크리스탈라이즈드 스타","엘리멘탈 인퓨저"],
+"사막":["크리스탈 스패어","스파이크드 스틸 볼","더스트 스톰","그레인 오브 밸런스","밴드 오브 크러싱 포스","스톤 브랜드","골렘 룬 코어","래미즈칸 아이돌","매드시어 코덱스","임퓨어 크라운","더 라스트 스트로우","임뷰드 체인","딜리케이트 펄스","데저트 에스커쳔"],
+"딥루트":["샤드 오브 블라이트","익스페다이트 앤클렛","위키드 크라운","트래블러 램프","코아귤레이트 핑거 네일","상권 팽","커스드 브랜드","팬텀 우즈"],
+"화산":["임페리얼 헤드밴드","블레이징 브랜드","불칸 너클","몰튼 캐라피스","마그마 참"],
+"퀘스트":["리썰 블랙잭","티어 블러드 크리스탈","에버비팅 드럼","드래곤 메모이르","나르타나 리프"],
+"보스":["젤라또 밴드","더스트 데빌 아이","오픈 핸드","더 스몰리스트 볼더","이로디드 블레이드","야툴 워레스 (과열)","블레이징 퍼포레이터","프로스트번드 룬","프테라 하트","데스비크 대거","에스펙트 오브 맬라답션","테인티드 퀴버","배인글로리우스 로켓","임뷰먼트 레일쿼리","디바인 프로미스","포커스드 마인드","보우 오브 루인","프로즌 디아뎀"],
+"이벤트":["엘레멘튜리 리소넌스","프로스티 토퍼","스노브","레빗 펠트","에그 셸멧","초콜릿 에그","파티 에그","글래밍 캐럿","래빗츠 풋"],
+"할로윈":["위치 브룸","위치 캡","스테인디드 마스크","헌티드 클로스","스파이더 헤어클립","펌킨 가츠","엑토플라즈믹 젤","투스 앤 네일","코일드 콥웹스"]
+};
+const RG_OF = {}; for (const [r, l] of Object.entries(GEAR_REGION)) l.forEach(n => RG_OF[n] = r);
+const RAR = {"일반":1, "고급":2, "희귀":3, "에픽":4, "전설":5};
+const RAR_OF = {};
+["행운의 뿔","결정화된 가시","피어나는 눈꽃","세월의 장","감염된 신체","쉐도우 건틀렛","크리스탈라이즈드 스타","임퓨어 크라운",
+ "더 라스트 스트로우","임뷰드 체인","샤드 오브 블라이트","에버비팅 드럼","드래곤 메모이르","나르타나 리프","블레이징 퍼포레이터",
+ "야툴 워레스 (과열)","프로스트번드 룬","프테라 하트","데스비크 대거","보우 오브 루인","프로즌 디아뎀","글래밍 캐럿"]
+  .concat(GEAR_REGION["할로윈"]).forEach(n => RAR_OF[n] = "전설");
+["매드시어 코덱스","코아귤레이트 핑거 네일","배인글로리우스 로켓","임뷰먼트 레일쿼리"].forEach(n => RAR_OF[n] = "에픽");
+["골렘 룬 코어","젤라또 밴드","더 스몰리스트 볼더","프로스티 토퍼","스노브","레빗 펠트","래빗츠 풋"].forEach(n => RAR_OF[n] = "고급");
+["아부스타 티어","짱짱 큰 짱돌","초콜릿 에그","파티 에그"].forEach(n => RAR_OF[n] = "일반");
+const ENCHANT_NAMES = new Set(["인페르노","리퍼","커스드","스펙트랄","고스트스틸","레이스","스푸키드","아이보리","하이에말","블레스드",
+                               "라이프송","프로스트","폴라리스","옥탄티스","스카이블레이즈","미다스"]);
+// 피해량 계산에 실제로 들어가는 항목인지 (효과 필드에서 자동 판정)
+const DMG_KEYS = ["multi","flat","trueFlat","crit","critDmg","finalMul","affSet","affMul","dagger"];
+function isDmgItem(it){
+  if (it.stp || it.stf || GEAR_SKILLS[it.n]) return true;
+  const fs = it.opts ? it.opts.map(o => o[1]) : [it.f || {}];
+  return fs.some(f => Object.entries(f).some(([k, v]) => DMG_KEYS.includes(k) || (k === "reduc" && v < 0) || (k === "reducMul" && v < 1)));
+}
+function tileMeta(it, grp){
+  const bits = [];
+  if (grp.key === "gear"){
+    const r = RAR_OF[it.n] || "희귀";
+    bits.push('<em class="rar r' + RAR[r] + '">' + r + '</em>');
+    if (RG_OF[it.n]) bits.push('<span class="rgn">' + RG_OF[it.n] + '</span>');
+  } else bits.push('<em class="rar r' + (ENCHANT_NAMES.has(it.n) ? 4 : 5) + '">' + (ENCHANT_NAMES.has(it.n) ? "인챈트" : "유물") + '</em>');
+  const st = GEAR_STATS[it.n];
+  if (st) bits.push(Object.entries(st).map(([k, v]) => STATS[k] + "+" + v).join(" "));
+  if (isDmgItem(it)) bits.push('<span class="dtag">◆ 딜</span>');
+  return '<span class="tmeta">' + bits.join("") + '</span>';
+}
 
 /* ══════════ 3. 렌더 ══════════ */
 const rowsOf = [];   // {el, item, grp}
@@ -1422,7 +1594,10 @@ MODS.forEach(grp => {
       b.addEventListener("keydown", e => {
         if (e.key === "Enter" || e.key === " "){ e.preventDefault(); b.click(); }
       });
-      b.innerHTML = '<span class="tn">' + it.n + '</span>' +
+      b.dataset.rg = grp.key === "gear" ? (RG_OF[it.n] || "기타") : (ENCHANT_NAMES.has(it.n) ? "인챈트" : "유물");
+      b.dataset.dmg = isDmgItem(it) ? "1" : "0";
+      b.dataset.q = it.n + " " + (it.note || "") + " " + b.dataset.rg;
+      b.innerHTML = '<span class="tn">' + it.n + '</span>' + tileMeta(it, grp) +
         (it.note ? '<span class="tnote">' + it.note + '</span>' : "") +
         '<span class="tctl" hidden>' + ctlHTML(it, grp) + '</span>' +
         '<span class="tv"></span>';
@@ -1436,6 +1611,7 @@ MODS.forEach(grp => {
         $("cap_" + grp.key).textContent = "";
         b.setAttribute("aria-pressed", on ? "false" : "true");
         b.querySelector(".tctl").hidden = on;
+        if (grp.key === "gear"){ fillSkills(); refreshActions(); }   // 기어가 주는 스킬
         calc();
       });
       host.appendChild(b);
@@ -1465,12 +1641,12 @@ function renderClassPassives(){
   const host = $("clsPassives");
   host.innerHTML = "";
   clsRows = [];
-  const c = {p: (CLASSES[$("cls").value] || {p:[]}).p.concat(subOf().p, raceOf().p)};
+  const c = {p: (CLASSES[$("cls").value] || {p:[]}).p.concat(baseOf().p, subOf().p, raceOf().p)};
   if (!c.p.length) return;
   const box = document.createElement("div");
   box.className = "mgroup";
   box.style.marginTop = "12px";
-  box.innerHTML = "<h3>클래스 · 서브 · 종족 패시브</h3>";
+  box.innerHTML = "<h3>클래스 · 베이스" + (baseOf().n ? " (" + baseOf().n + ")" : "") + " · 서브 · 종족 패시브</h3>";
   c.p.forEach((it, ii) => {
     if (!it.dyn && !it.stp && (!it.f || !Object.keys(it.f).length)) {
       const p = document.createElement("div");
@@ -1548,8 +1724,8 @@ function addScaler(stat="STR", div=75){
 $("addScale").addEventListener("click", () => { addScaler("ARC", 80); calc(); });
 
 /* ══════════ 4. 보정 집계 ══════════ */
-const FSUF = {multi:"%", critDmg:"%", reduc:"", flat:"", trueFlat:"", crit:""};
-const EMPTY = () => ({multi:0, flat:0, reduc:0, reducMul:1, trueFlat:0, crit:0, critDmg:0, affSet:null, affMul:1, finalMul:1});
+const FSUF = {multi:"%", critDmg:"%", reduc:"", flat:"", trueFlat:"", crit:"", dagger:""};
+const EMPTY = () => ({multi:0, flat:0, reduc:0, reducMul:1, trueFlat:0, crit:0, critDmg:0, affSet:null, affMul:1, finalMul:1, dagger:0});
 
 function readRow(r, ctx){
   const it = r.item;
@@ -1557,8 +1733,8 @@ function readRow(r, ctx){
   if (it.opts && CACHE.cp){
     const optSel0 = r.el.querySelector(".opt");
     if (optSel0 && CP_COST(optSel0.selectedOptions[0].textContent) > 0 &&
-        (ctx ? ctx.noCP : (CACHE.cp.blocked || !CACHE.cp.corr || CACHE.cp.short)))
-      return {on:false, f:{}, n:1, eff:"CP 사용 불가", optIdx:0};
+        (!$("cpWorks").checked || (ctx ? ctx.noCP : (CACHE.cp.blocked || !CACHE.cp.corr || CACHE.cp.short))))
+      return {on:false, f:{}, n:1, eff:$("cpWorks").checked ? "CP 사용 불가" : "CP 강화 꺼짐", optIdx:0};
   }
   const cb = r.tile ? null : r.el.querySelector("input[type=checkbox]");
   let on = r.tile ? r.el.getAttribute("aria-pressed") === "true" : (cb && cb.checked);
@@ -1582,6 +1758,12 @@ function readRow(r, ctx){
           : it.opts ? it.opts[optIdx][1]
           : (tierSel && tierSel.value === "1" && it.t2) ? it.t2 : (it.f || {});
   if (it.cap && f.multi && f.multi * n > it.cap) f = Object.assign({}, f, {multi: it.cap / n});
+  // CP 강화는 첫 타에만 → 다단히트면 타수로 나눈 평균으로
+  if (it.opts && optSel && CP_COST(optSel.selectedOptions[0].textContent) > 0){
+    const H = Math.max(1, (ctx && ctx.hits) || Math.round(num("hits")));
+    const base0 = it.opts[0][1];
+    if (H > 1) { const g = {}; for (const [k,v] of Object.entries(f)) g[k] = (base0[k] || 0) + (v - (base0[k] || 0)) / H; f = g; }
+  }
   const eff = Object.entries(f).map(([k,v]) =>
       k === "reducMul" ? "×" + Math.pow(v,n).toFixed(3)
     : k === "finalMul" ? "×" + v
@@ -2003,13 +2185,14 @@ function cpState(){
     const c = CP_COST(opt.selectedOptions[0].textContent);
     if (c){ per += c; used.push(el.querySelector(".tn").textContent + " " + c); }
   });
-  const need = per * hits;
+  const need = per;   // 강화는 첫 타에만 → 공격당 1회 소모
   const blocked = notch && per > 0;
   const short = !blocked && need > have;
   $("cpOut").innerHTML = !corr ? "커럽션 없음 — 커럽트 파워 옵션을 쓸 수 없습니다."
     : notch ? '<b style="color:var(--warn)">노치 소모 공격</b> — 이 공격에는 커럽트 파워를 쓸 수 없습니다.' +
               (used.length ? " 켜둔 옵션(" + used.join(", ") + ")은 계산에서 제외됩니다." : "")
-    : used.length ? "CP 옵션 " + used.join(" · ") + " × " + hits + "타"
+    : !$("cpWorks").checked ? "CP 강화 꺼짐 (실측상 미작동) — 기본 효과만 반영"
+    : used.length ? "CP 옵션 " + used.join(" · ") + " · 첫 타에만"
     : "켜둔 커럽트 파워 옵션 없음";
   $("cpNeed").textContent = used.length && !notch ? "필요 " + need + " / 보유 " + have : "—";
   $("cpNeed").style.color = short ? "var(--warn)" : "";
@@ -2019,7 +2202,7 @@ function cpState(){
 /* 착용 기어의 고정 스탯 */
 function gearStatBonus(){
   const b = {STR:0,ARC:0,END:0,SPD:0,LCK:0}; const names = [];
-  document.querySelectorAll('#tiles_gear .tile[aria-pressed="true"]').forEach(el => {
+  document.querySelectorAll('#tiles_gear .tile[aria-pressed="true"], #tiles_art .tile[aria-pressed="true"]').forEach(el => {
     const n = el.querySelector(".tn").textContent;
     if (TARGET_GEAR.has(n)) return;
     const st = GEAR_STATS[n]; if (!st) return;
@@ -2101,22 +2284,24 @@ function armorState(){
   return {flat, pct, hp:a.hp || 0, hpPct:a.hpPct || 0, name:$("armor").value};
 }
 
-let CACHE = {stp:{STR:0,ARC:0,END:0,SPD:0,LCK:0}, cp:null, mk:{pct:{STR:0,ARC:0,END:0,SPD:0,LCK:0}, tiers:{}, edo:""}, ch:{base:{STR:0,ARC:0,END:0,SPD:0,LCK:0}, budget:150, used:0, lv:50}, gs:{STR:0,ARC:0,END:0,SPD:0,LCK:0}, soul:null, party:null, weapon:null, ar:{flat:{STR:0,ARC:0,END:0,SPD:0,LCK:0}, pct:{STR:0,ARC:0,END:0,SPD:0,LCK:0}}, mb:{STR:0,ARC:0,END:0,SPD:0,LCK:0}};
-function stpState(){
+let CACHE = {stp:{STR:0,ARC:0,END:0,SPD:0,LCK:0}, stf:{STR:0,ARC:0,END:0,SPD:0,LCK:0}, cp:null, mk:{pct:{STR:0,ARC:0,END:0,SPD:0,LCK:0}, tiers:{}, edo:""}, ch:{base:{STR:0,ARC:0,END:0,SPD:0,LCK:0}, budget:150, used:0, lv:50}, gs:{STR:0,ARC:0,END:0,SPD:0,LCK:0}, soul:null, party:null, weapon:null, ar:{flat:{STR:0,ARC:0,END:0,SPD:0,LCK:0}, pct:{STR:0,ARC:0,END:0,SPD:0,LCK:0}}, mb:{STR:0,ARC:0,END:0,SPD:0,LCK:0}};
+function stpState(key){
+  key = key || "stp";
   const b = {STR:0, ARC:0, END:0, SPD:0, LCK:0};
   rowsOf.concat(clsRows, spRows).forEach(r => {
-    if (!r.item.stp) return;
+    if (!r.item[key]) return;
     const on = r.tile ? r.el.getAttribute("aria-pressed") === "true"
                       : (r.el.querySelector("input[type=checkbox]") || {}).checked;
     if (!on) return;
     const stk = r.el.querySelector(".stk");
     const n = stk ? Math.max(1, parseInt(stk.value) || 1) : 1;
-    for (const [k,v] of Object.entries(r.item.stp)) b[k] += v * n;
+    for (const [k,v] of Object.entries(r.item[key])) b[k] += v * n;
   });
   return b;
 }
 function refreshCache(){
-  CACHE.stp = stpState();
+  CACHE.stp = stpState("stp");   // 전투 중 % 버프 (미다스·아이보리·오버로드 …)
+  CACHE.stf = stpState("stf");   // 전투 중 고정 스탯 (핑거 네일 +1.5/턴, 크리스탈라이즈드 스타 행운 +10 …)
   CACHE.mk = markState();
   CACHE.cp = cpState();
   CACHE.ch = charState();
@@ -2129,8 +2314,11 @@ function refreshCache(){
 }
 function MB(){ return CACHE.mb; }
 /* 역산용: 배분 포인트만 바꿔 끼운 최종 스탯 */
+const PANEL = () => $("panelMode") && $("panelMode").checked;
+const panelVal = k => String(($("P_" + k) || {}).value || "0").split("+").reduce((a, x) => a + (parseFloat(x) || 0), 0);
 function SVs(stats, k){
-  return (CACHE.ch.base[k] + stats[k] + CACHE.gs[k] + CACHE.mb[k] + CACHE.ar.flat[k]) *
+  if (PANEL()) return SV(k);
+  return (CACHE.ch.base[k] + stats[k] + CACHE.gs[k] + CACHE.mb[k] + CACHE.ar.flat[k] + CACHE.stf[k]) *
          (1 + (CACHE.ar.pct[k] + CACHE.mk.pct[k] + CACHE.stp[k]) / 100);
 }
 /* 110 마일스톤 (09-16): 근력 → 근접 피해 +20%, 신비 → 원거리 피해 +20% */
@@ -2141,12 +2329,19 @@ function msBonus(strV, arcV){
 /* 스킬 고유의 상시 효과 (예: Empowered Piercer 치명타 +50%) */
 function alwaysOf(name){ const ex = SKILL_EXTRA[name]; return ex && ex.always ? Object.assign(EMPTY(), ex.always) : EMPTY(); }
 function selectedSkillName(){ const i = $("skill").value; return i === "" ? "" : (skillPool()[+i] || {}).n || ""; }
-function SV(k){ return (CACHE.ch.base[k] + num(k) + CACHE.gs[k] + CACHE.mb[k] + CACHE.ar.flat[k]) * (1 + (CACHE.ar.pct[k] + CACHE.mk.pct[k] + CACHE.stp[k]) / 100); }
+// 스탯창 모드: 창에 뜬 값(장비·갑옷·마스터리 포함)에 전투 중 버프만 얹는다
+function SV(k){
+  if (PANEL()) return (panelVal(k) + CACHE.stf[k]) * (1 + (CACHE.mk.pct[k] + CACHE.stp[k]) / 100);
+  return (CACHE.ch.base[k] + num(k) + CACHE.gs[k] + CACHE.mb[k] + CACHE.ar.flat[k] + CACHE.stf[k]) * (1 + (CACHE.ar.pct[k] + CACHE.mk.pct[k] + CACHE.stp[k]) / 100);
+}
 
 /* ══════════ 4-b. 파티 ══════════ */
 const PARTY_BUFFS = [
   ["없음", {}, ""],
-  ["랜서 [Rallying Shout]", {multi:15}, "팀 피해량 +15% · 방어 +10% · 속도 +25%"],
+  ["랜서 [Rallying Shout]", {multi:10, crit:20}, "아군 피해량 +10% · 치명타 +20% · 피해 저항 10%"],
+  ["팔라딘 [Sacred Call]", {multi:10}, "대상 피해량 +10% · 피해 저항 10% · 가시 10"],
+  ["음유시인 [Latir Minor]", {multi:5}, "아군 피해량 +5% · 재생 0.5%"],
+  ["레이스 헌티드 5스택", {multi:15}, "대상 받는 피해 +15%"],
   ["시타델 [Blinding Vow]", {multi:10}, "방어 버프 10%, 경감량만큼 피해 버프"],
   ["임패일러 [Blood Eruption 강화]", {multi:20}, "3턴 간 주고받는 피해 +20%"],
   ["취약 부여", {multi:20}, "대상이 받는 피해 +20%"],
@@ -2228,14 +2423,36 @@ function critParts(M){
   return {c, f, n, lo, hi, expected: lo*(1-f) + hi*f, bonus};
 }
 
+// 타마다 계수가 다른 스킬 (버스트 콤보 1타 /50 · 나머지 /75 …) → 타당 평균 Base
+function partScaled(sk, sv){
+  let tot = 0, hits = 0;
+  sk.parts.forEach(([b, h, sc]) => { tot += b * h * (1 + sc.reduce((a, [st, d]) => a + (d > 0 ? sv(st) / d : 0), 0)); hits += h; });
+  return {avg: tot / hits, hits};
+}
+// 버프를 안 받는 공격: all = 패링 (배율·Flat·치명타 전부 제외), multi = 포이즌 트랩·소환수 (피해량 버프만 제외)
+function rawify(M, mode){
+  const o = EMPTY();
+  o.reduc = M.reduc; o.reducMul = M.reducMul; o.affSet = M.affSet; o.affMul = M.affMul;
+  if (mode === "multi"){ o.flat = M.flat; o.trueFlat = M.trueFlat; o.crit = M.crit; o.critDmg = M.critDmg; o.dagger = M.dagger; }
+  return o;
+}
+const NOCRIT = () => ({c:0, f:0, n:0, lo:1, hi:1, expected:1, bonus:0});
+// 데스비크 대거: 치명타 시 (타당 기본 피해 × 치명타 배수 × 계수) — 버프·치명타 미적용
+function daggerOf(M, k, base){
+  if (!M.dagger || !k.c) return 0;
+  return Math.min(1, k.c) * base * (k.c >= 1 ? k.expected : k.hi) * M.dagger;
+}
+function selectedSkill(){ const i = $("skill").value; return i === "" ? null : skillPool()[+i] || null; }
+
 // 하나의 타격을 파이프라인에 통과시킴
 function resolve(M, over){
   const base = over && over.base !== undefined ? over.base : num("base");
   const sc = over && over.scale !== undefined ? over.scale : scaleMul().mul;
   const scaled = base * sc;
-  const multi = 1 + (num("multi") + M.multi + msBonus(SV("STR"), SV("ARC"))) / 100;
+  const raw = over && over.raw;
+  const multi = raw ? 1 : 1 + (num("multi") + M.multi + msBonus(SV("STR"), SV("ARC"))) / 100;
   const aff = (M.affSet !== null ? M.affSet : num("aff")) * M.affMul;
-  const beforeDR = (scaled + num("flat") + M.flat - num("dflat")) * multi * aff * M.finalMul;
+  const beforeDR = (scaled + (raw === "all" ? 0 : num("flat") + M.flat) - num("dflat")) * multi * aff * M.finalMul;
   const R = (num("reduc") + M.reduc) * M.reducMul;
   const drMult = R >= 0 ? 100/(100+R) : Math.min(2, 2 - 100/(100+Math.abs(R)));
   const afterDR = beforeDR * drMult;
@@ -2391,8 +2608,8 @@ function runSim(){
         // ── 커럽트 파워 소모 (타수마다) ──
         let cpAcc = EMPTY(), cpNote = "";
         const cpBlocked = blas && sk.c >= 3;
-        if (!cpBlocked && CACHE.cp && CACHE.cp.per > 0 && corr){
-          const need = CACHE.cp.per * sk.h;
+        if (!cpBlocked && CACHE.cp && CACHE.cp.per > 0 && corr && $("cpWorks").checked){
+          const need = CACHE.cp.per;
           if (cpNow >= need){ cpNow -= need; cpNote = " · CP −" + need; }
           else { cpAcc = null; cpNote = " · CP 부족(" + cpNow + "/" + need + ")"; }
         } else if (CACHE.cp && CACHE.cp.per > 0){
@@ -2401,20 +2618,22 @@ function runSim(){
         const DA = debAccOf();
         const SH = shardState({hpPct: hp / hp0 * 100,
                     debTgt: Object.values(deb).filter(v => v > 0).length});
-        let M = mergeAcc(mergeAcc(mergeAcc(mergeAcc(mergeAcc(collectMods({turn, combo, afterMeditate, noCP: cpAcc === null, blood, rage}), P.acc),
+        let M = mergeAcc(mergeAcc(mergeAcc(mergeAcc(mergeAcc(collectMods({turn, combo, afterMeditate, noCP: cpAcc === null, blood, rage, hits: sk.h}), P.acc),
                     soulState({turn, afterMeditate}).acc), WA), DA.a), SH);
         M = mergeAcc(mergeAcc(M, notchAcc), alwaysOf(sk.n));
+        if (sk.raw) M = rawify(M, sk.raw);
         const sc = sk.s.length ? 1 + sk.s.reduce((a,[st2,d]) => a + (d > 0 ? SV(st2)/d : 0), 0) : scaleMul().mul;
-        let base = sk.b, extraNote = "";
+        let base = sk.b, extraNote = "", scUse = sc;
+        if (sk.parts){ base = partScaled(sk, SV).avg; scUse = 1; }
         if (sk.consumeDeb){                       // 코니수라
           const types = Object.entries(deb).filter(([n,v]) => v > 0 && n !== "헥스").length;
           const hexes = deb["헥스"] || 0;
           base += types * 3 + hexes * 6;
           extraNote = " · 디버프 " + types + "종" + (hexes ? "+헥스" + hexes : "") + " 흡수 → 기본 " + base;
         }
-        const r = resolve(M, {base, scale: sc});
-        const k = critParts(M);
-        dmg = (r.afterDR * k.expected + r.trueDmg) * sk.h;
+        const r = resolve(M, {base, scale: scUse, raw: sk.raw});
+        const k = sk.raw === "all" ? NOCRIT() : critParts(M);
+        dmg = (r.afterDR * k.expected + r.trueDmg + daggerOf(M, k, sk.b)) * sk.h;
         st = "NRG " + nrg + " · " + sk.h + "타" + (combo > 1 ? " · 연속 " + combo : "") + extraNote + notchNote + cpNote;
         if (blas) recoil += 5 * sk.c;   // 공격할수록 리코일이 쌓인다
         if (DA.hex && deb["헥스"]) deb["헥스"]--;
@@ -2465,17 +2684,22 @@ function calc(){
   refreshCache();
   const SO = soulState();
   const PA = partyAcc();
-  const M = mergeAcc(mergeAcc(mergeAcc(mergeAcc(collectMods(null), PA.acc), SO.acc), mergeAcc(weaponState().acc, shardState(null))),
+  let M = mergeAcc(mergeAcc(mergeAcc(mergeAcc(collectMods(null), PA.acc), SO.acc), mergeAcc(weaponState().acc, shardState(null))),
                     alwaysOf(selectedSkillName()));
+  const skNow = selectedSkill();
+  if (skNow && skNow.raw) M = rawify(M, skNow.raw);
+  const over = {raw: skNow && skNow.raw};
+  if (skNow && skNow.parts){ over.base = partScaled(skNow, SV).avg; over.scale = 1; }
   const ms = msBonus(SV("STR"), SV("ARC"));
   if (ms) SO.lines.push([($("atkRange").value === "melee" ? "근력" : "신비") + " 110 마일스톤", "+20%"]);
   const extra = SO.lines.map(([a,b]) => ["소울 · " + a, b])
     .concat(PA.lines.map(([a]) => ["파티 · " + a, ""]));
   if (extra.length) $("bd").insertAdjacentHTML("beforeend",
     extra.map(([a,b]) => "<li><span>" + a + "</span><b>" + b + "</b></li>").join(""));
-  const k = critParts(M);
-  const r = resolve(M);
+  const k = skNow && skNow.raw === "all" ? NOCRIT() : critParts(M);
+  const r = resolve(M, over);
   const hits = Math.max(1, Math.round(num("hits")));
+  const dag = daggerOf(M, k, num("base")), dagCrit = M.dagger ? num("base") * k.hi * M.dagger : 0;
   const parts = scaleMul().parts;
 
   $("s1").textContent = fmt(r.scaled);
@@ -2491,9 +2715,9 @@ function calc(){
   $("s6").textContent = fmt(r.final);
 
   $("normal").textContent = fmt(r.final * hits);
-  $("crit").textContent = fmt((r.afterDR * k.hi + r.trueDmg) * hits);
+  $("crit").textContent = fmt((r.afterDR * k.hi + r.trueDmg + dagCrit) * hits);
   $("critx").textContent = "×" + k.hi.toFixed(2);
-  const expPerHit = r.afterDR * k.expected + r.trueDmg;
+  const expPerHit = r.afterDR * k.expected + r.trueDmg + dag;
 
   const tier = ["크리티컬","슈퍼 크리티컬","울트라 크리티컬","메가 크리티컬","최상위"];
   const cc = k.c * 100;
@@ -2504,7 +2728,11 @@ function calc(){
       : cc.toFixed(0) + "% 확률로 크리티컬 (×" + k.hi.toFixed(2) + ")");
 
   $("statOut").innerHTML = "최종 스탯 &nbsp; " + Object.keys(STATS)
-    .map(k => STATS[k] + " <b style='color:var(--gold)'>" + (+SV(k).toFixed(1)) + "</b>").join(" &nbsp;·&nbsp; ");
+    .map(k => STATS[k] + " <b style='color:var(--gold)'>" + (+SV(k).toFixed(1)) + "</b>").join(" &nbsp;·&nbsp; ") +
+    "<br><span style='color:var(--ink-faint)'>스탯창 대조 — 물리 DMG " + (100 + SV("STR") * 1.32).toFixed(1) + "% · 원거리 DMG " +
+    (100 + SV("ARC") * 1.32).toFixed(1) + "% · 치명타 " + (parseFloat($("critAdd").value || 0) + SV("LCK") * parseFloat($("lckMode").value)).toFixed(1) +
+    "% (유물·기어 치명타 제외) — 게임 스탯창과 같으면 입력이 맞는 것</span>";
+  $("panelBox").hidden = !PANEL();
   runSim();
   renderCard(M, r, k, hits, expPerHit);
   tabDots();
@@ -2819,14 +3047,38 @@ $("dumpBuild").addEventListener("click", () => {
   $("buildText").value = lines.join("\n");
 });
 
-/* 기어 검색 */
-$("gearSearch").addEventListener("input", () => {
-  const q = NORM($("gearSearch").value);
-  document.querySelectorAll("#tiles_gear .tile").forEach(t => {
-    const n = NORM(t.querySelector(".tn").textContent + (t.querySelector(".tnote") ? t.querySelector(".tnote").textContent : ""));
-    t.style.display = !q || n.includes(q) ? "" : "none";
+/* 기어 · 유물 필터 (검색 + 지역 칩 + 딜 관련만 + 착용 중만) */
+function chipBar(host, labels, key){
+  const tiles = [...document.querySelectorAll("#tiles_" + key + " .tile")];
+  host.innerHTML = ["전체"].concat(labels).map((l, i) =>
+    '<button type="button" class="chip" data-r="' + l + '" aria-pressed="' + (i === 0) + '">' + l +
+    '<span class="n">' + (i === 0 ? tiles.length : tiles.filter(t => t.dataset.rg === l).length) + '</span></button>').join("");
+  host.addEventListener("click", e => {
+    const c = e.target.closest(".chip"); if (!c) return;
+    host.querySelectorAll(".chip").forEach(x => x.setAttribute("aria-pressed", x === c ? "true" : "false"));
+    applyTileFilter();
   });
-});
+}
+function applyTileFilter(){
+  const pick = id => { const c = document.querySelector("#" + id + ' .chip[aria-pressed="true"]'); return c ? c.dataset.r : "전체"; };
+  const q = NORM($("gearSearch").value);
+  let shown = 0;
+  [["gear", pick("gearChips"), $("gearDmgOnly").checked, $("gearOnOnly").checked, q],
+   ["art",  pick("artChips"),  $("artDmgOnly").checked, false, ""]].forEach(([key, rg, dmg, on, qq]) => {
+    document.querySelectorAll("#tiles_" + key + " .tile").forEach(t => {
+      const ok = (!qq || NORM(t.dataset.q).includes(qq)) && (rg === "전체" || t.dataset.rg === rg) &&
+                 (!dmg || t.dataset.dmg === "1") && (!on || t.getAttribute("aria-pressed") === "true");
+      t.style.display = ok ? "" : "none";
+      if (ok && key === "gear") shown++;
+    });
+  });
+  $("gearShown").textContent = shown + "개 표시 · ◆ 딜 = 피해량 계산에 실제로 들어가는 기어 · 나머지는 회복·방어·유틸이라 표시만";
+}
+chipBar($("gearChips"), Object.keys(GEAR_REGION), "gear");
+chipBar($("artChips"), ["유물", "인챈트"], "art");
+["gearSearch","gearDmgOnly","gearOnOnly","artDmgOnly"].forEach(id => $(id).addEventListener("input", applyTileFilter));
+document.querySelectorAll("#tiles_gear, #tiles_art").forEach(h => h.addEventListener("click", () => { if ($("gearOnOnly").checked) applyTileFilter(); }));
+applyTileFilter();
 
 /* ── 테마 ── */
 const THEMES = [["dark","☾ 밤"], ["light","☀ 낮"]];
@@ -2906,9 +3158,11 @@ function accOf(list){
   return a;
 }
 function dmgWith(acc0, stats){
-  const acc = mergeAcc(mergeAcc(mergeAcc(acc0, mergeAcc(CACHE.soul || EMPTY(), CACHE.party || EMPTY())), CACHE.weapon || EMPTY()), alwaysOf(selectedSkillName()));
+  let acc = mergeAcc(mergeAcc(mergeAcc(acc0, mergeAcc(CACHE.soul || EMPTY(), CACHE.party || EMPTY())), CACHE.weapon || EMPTY()), alwaysOf(selectedSkillName()));
+  const skx = selectedSkill();
+  if (skx && skx.raw) acc = rawify(acc, skx.raw);
   const hits = Math.max(1, Math.round(num("hits")));
-  const scaled = num("base") * statScale(stats);
+  const scaled = skx && skx.parts ? partScaled(skx, st => SVs(stats, st)).avg : num("base") * statScale(stats);
   const multi = 1 + (num("multi") + acc.multi + msBonus(SVs(stats,"STR"), SVs(stats,"ARC"))) / 100;
   const aff = (acc.affSet !== null ? acc.affSet : num("aff")) * acc.affMul;
   const beforeDR = (scaled + num("flat") + acc.flat - num("dflat")) * multi * aff * acc.finalMul;
@@ -2921,6 +3175,7 @@ function dmgWith(acc0, stats){
   const n = Math.floor(c), f = c - n;
   const bonus = acc.critDmg / 100;
   const lo = n === 0 ? 1 : 1 + n + bonus, hi = 2 + n + bonus;
+  if (skx && skx.raw === "all") return (after + t) * hits;
   return (after * (lo*(1-f) + hi*f) + t) * hits;
 }
 
@@ -3316,7 +3571,7 @@ $("solve").addEventListener("click", solve);
 
 /* ── 클래스/스킬 선택 ── */
 $("cls").innerHTML = Object.keys(CLASSES).map(n => '<option value="'+n+'">'+n+'</option>').join("");
-function skillPool(){ return (CLASSES[$("cls").value] || {k:[]}).k.concat(subOf().k, raceOf().k, markSkills()); }
+function skillPool(){ return (CLASSES[$("cls").value] || {k:[]}).k.concat(baseOf().k, subOf().k, raceOf().k, markSkills(), gearSkills()); }
 function fillSkills(){
   const keep = $("skill").value !== "" && $("skill").selectedOptions[0]
     ? $("skill").selectedOptions[0].textContent : null;
@@ -3347,7 +3602,9 @@ $("skill").addEventListener("change", () => {
   if (s.s.length) s.s.forEach(([st,d]) => addScaler(st, d)); else addScaler("STR", 0);
   renderSkillSp();
   $("skillInfo").textContent = s.n + " — " + s.c + " NRG · 쿨타임 " + s.cd + "턴 · " + s.e + " 속성" +
-    (s.s.length ? " · 계수 " + s.s.map(([st,d]) => STATS[st] + "/" + (d || "?")).join(" + ") : "") +
+    (s.parts ? " · " + s.parts.map(([b,h,sc]) => b + "×" + h + " (" + sc.map(([st,d]) => STATS[st] + "/" + d).join("+") + ")").join(" + ")
+     : s.s.length ? " · 계수 " + s.s.map(([st,d]) => STATS[st] + "/" + (d || "?")).join(" + ") : "") +
+    (s.raw === "all" ? " · 배율·치명타 미적용" : s.raw === "multi" ? " · 피해량 버프 미적용" : "") +
     (s.x ? "  |  " + s.x : "");
   calc();
 });
